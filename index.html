@@ -7,190 +7,237 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* =====================================================================
+   QUASI DASHBOARD — v2 design system
+   Rose = US / brand, Blue = Amazon. Fraunces for headings, Inter for UI,
+   IBM Plex Mono for numbers.
+   ===================================================================== */
 :root{
-  --bg:#FBF6F3;
-  --surface:#FFFFFF;
-  --surface2:#F6ECE7;
-  --ink:#2B1F26;
-  --ink-dim:#8B7B84;
-  --ink-mid:#5E4E58;
-  --line:#EADFD8;
-  --line2:#DCCCC3;
-  --accent:#C6577A;
-  --accent-deep:#8F3454;
-  --accent-tint:#FBEAF0;
-  --jade:#3E7D5C;
-  --jade-tint:#EAF5EE;
-  --amber:#B3792F;
-  --amber-tint:#FBF1E2;
-  --red:#B23B3B;
-  --red-tint:#FBEAEA;
-  --blue:#3D6E96;
-  --blue-tint:#EAF2F8;
+  --bg:#FAF5F1; --surface:#FFFFFF; --surface2:#F7EEEA; --surface3:#FCF9F7;
+  --ink:#2B1F26; --ink-dim:#8B7B84; --ink-mid:#5E4E58;
+  --line:#EFE5DF; --line2:#E2D4CC;
+  --accent:#C6577A; --accent-deep:#8F3454; --accent-tint:#FBEAF0;
+  --jade:#3E7D5C; --jade-tint:#EAF5EE;
+  --amber:#B3792F; --amber-tint:#FBF1E2;
+  --red:#B23B3B; --red-tint:#FBEAEA;
+  --blue:#3D6E96; --blue-tint:#EAF2F8;
+  --us:#C6577A; --amz:#3D6E96;
+  --r:14px; --r-sm:9px;
+  --shadow-sm:0 1px 2px rgba(43,31,38,.05);
+  --shadow:0 1px 2px rgba(43,31,38,.04),0 14px 34px -18px rgba(43,31,38,.18);
+  --sb-w:244px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 body{
-  background:var(--bg);
-  color:var(--ink);
-  font-family:'Inter',sans-serif;
-  font-size:14px;
-  line-height:1.5;
-  min-height:100vh;
+  background:radial-gradient(900px 420px at 92% -8%,rgba(198,87,122,.075),transparent 62%),var(--bg);
+  color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
 .mono{font-family:'IBM Plex Mono',monospace}
 .disp{font-family:'Fraunces',serif}
 
-/* ---- HEADER ---- */
-.header{
-  background:var(--surface);
-  border-bottom:1px solid var(--line);
-  padding:18px 32px;
-  display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;
+/* ---- APP SHELL ---- */
+.shell{min-height:100vh}
+.sidebar{
+  width:var(--sb-w);background:var(--surface);border-right:1px solid var(--line);
+  position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;padding:22px 14px 16px;overflow-y:auto;z-index:60;
 }
-.header-left{display:flex;align-items:center;gap:14px}
-.logo{display:flex;align-items:center;gap:12px}
-.logo .logo-img{height:22px;width:auto;display:block}
-.logo span{color:var(--ink-dim);font-weight:500;font-size:12.5px;font-family:'Inter',sans-serif;padding-left:12px;border-left:1px solid var(--line2)}
-.asof{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-dim);border:1px solid var(--line2);padding:4px 10px;border-radius:20px}
-.hbtn{padding:7px 14px;background:var(--surface2);border:1px solid var(--line2);border-radius:7px;font-size:12.5px;color:var(--ink-mid);cursor:pointer;font-family:'Inter',sans-serif;transition:.15s}
+.sb-brand{padding:2px 10px 16px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.sb-brand .logo-img{height:25px;width:auto;display:block}
+.sb-brand small{display:block;margin-top:8px;font-size:11px;color:var(--ink-dim);letter-spacing:.02em}
+.sb-group{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);padding:16px 12px 6px}
+.nav-tab{
+  display:flex;align-items:center;padding:9px 12px;margin:1px 0;border-radius:10px;border:1px solid transparent;
+  font-size:13.5px;font-weight:500;color:var(--ink-mid);cursor:pointer;transition:background .15s,color .15s;user-select:none;
+}
+.nav-tab svg{width:17px;height:17px;margin-right:11px;flex:0 0 auto;opacity:.85}
+.nav-tab:hover{background:var(--surface2);color:var(--ink)}
+.nav-tab.active{background:var(--accent-tint);color:var(--accent-deep);border-color:#F4D6E1}
+.nav-tab.active svg{opacity:1}
+.nav-tab .badge{margin-left:auto;margin-right:0;background:var(--surface2);color:var(--ink-mid);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 7px;border-radius:10px}
+.nav-tab.active .badge{background:#fff;color:var(--accent-deep)}
+.nav-tab .badge:empty{display:none}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.sb-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.sb-note{font-size:10.5px;color:var(--ink-dim);padding:10px 12px 0;line-height:1.5}
+
+.main{margin-left:var(--sb-w);min-width:0}
+.topbar{
+  padding:22px 36px 18px;
+  position:sticky;top:0;z-index:50;background:rgba(250,245,241,.9);backdrop-filter:blur(10px);
+}
+.tb-title{overflow:hidden}
+.tb-title h1{font-family:'Fraunces',serif;font-weight:600;font-size:27px;line-height:1.15;letter-spacing:-.012em}
+.tb-title p{font-size:13px;color:var(--ink-dim);margin-top:3px}
+.tb-right{float:right;margin:3px 0 0 16px;white-space:nowrap}
+.tb-right > *{display:inline-block;vertical-align:middle;margin-left:10px}
+.topbar::after{content:'';display:block;clear:both}
+.asof{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-mid);background:var(--surface);border:1px solid var(--line2);padding:6px 12px;border-radius:20px;white-space:nowrap}
+.hbtn{
+  display:inline-block;padding:8px 14px;background:var(--surface);border:1px solid var(--line2);
+  border-radius:9px;font-size:12.5px;font-weight:500;color:var(--ink-mid);cursor:pointer;font-family:'Inter',sans-serif;transition:.15s;white-space:nowrap;box-shadow:var(--shadow-sm);
+}
+.hbtn svg{width:14px;height:14px;vertical-align:-2px;margin-right:7px}
 .hbtn:hover{border-color:var(--accent);color:var(--accent-deep)}
+.sb-toggle{display:none;width:38px;height:38px;padding:9px 0;text-align:center;border-radius:10px;border:1px solid var(--line2);background:var(--surface);cursor:pointer;float:left;margin:0 12px 0 0}
+.sb-toggle svg{width:19px;height:19px;color:var(--ink)}
+.sb-overlay{display:none}
 
-/* ---- NAV ---- */
-.nav{background:var(--surface);border-bottom:1px solid var(--line);padding:0 32px;display:flex;gap:2px}
-.nav-tab{padding:13px 18px;font-size:13px;font-weight:500;color:var(--ink-dim);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;display:flex;align-items:center;gap:7px;user-select:none}
-.nav-tab:hover{color:var(--ink)}
-.nav-tab.active{color:var(--accent-deep);border-bottom-color:var(--accent)}
-.nav-tab .badge{background:var(--surface2);color:var(--ink-mid);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 6px;border-radius:10px}
-.nav-tab.active .badge{background:var(--accent-tint);color:var(--accent-deep)}
-.nav-tab .badge.red{background:var(--red-tint);color:var(--red)}
-
-.content{padding:28px 32px;max-width:1500px}
+.content{padding:6px 36px 64px;max-width:1520px;width:100%}
 .section{display:none}
 .section.active{display:block}
 
-/* ---- CAVEAT BANNER ---- */
-.caveat{
-  background:var(--amber-tint);border:1px solid #E9CE9C;color:#8A5D1D;
-  border-radius:9px;padding:11px 16px;font-size:12.5px;margin-bottom:20px;
-  display:flex;gap:10px;align-items:flex-start;
+/* ---- PAGE TOOLS (channel switch) ---- */
+.page-tools{margin:2px 0 20px}
+.seg{display:table;white-space:nowrap;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg button{
+  display:table-cell;border:0;background:transparent;padding:8px 16px;border-radius:9px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--ink-mid);cursor:pointer;transition:.15s;
 }
+.seg button:hover{color:var(--ink)}
+.seg button.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.seg .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.tools-note{font-size:12.5px;color:var(--ink-dim);max-width:640px;margin-top:9px}
+
+/* ---- CAVEAT BANNERS ---- */
+.caveat{
+  background:var(--amber-tint);border:1px solid #EBD3A4;color:#8A5D1D;border-radius:11px;padding:12px 16px;
+  font-size:12.5px;margin-bottom:14px;display:flex;gap:11px;align-items:flex-start;line-height:1.55;
+}
+.caveat > span:first-child{flex:0 0 auto;font-size:14px;line-height:1.4}
 .caveat b{color:#6B4413}
-.caveat.info{background:var(--blue-tint);border-color:#B9D3E5;color:#2E5674}
+.caveat.info{background:var(--blue-tint);border-color:#BFD6E7;color:#2E5674}
 .caveat.info b{color:#1F425A}
 
-/* ---- HERO KPI ---- */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+/* ---- KPI CARDS ---- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-bottom:22px}
 .kpi-card{
-  position:relative;overflow:hidden;
-  background:var(--surface);border:1px solid var(--line);border-radius:14px;
-  padding:20px 22px;
+  position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 20px 16px 22px;box-shadow:var(--shadow-sm);
 }
-.kpi-card::before{
-  content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;
-  background:radial-gradient(circle,rgba(198,87,122,.16),transparent 70%);
-  filter:blur(2px);
-}
-.kpi-label{font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:9px;position:relative}
-.kpi-value{font-family:'Fraunces',serif;font-size:32px;font-weight:600;line-height:1;position:relative;color:var(--ink)}
-.kpi-value.red{color:var(--red)}
-.kpi-value.amber{color:var(--amber)}
-.kpi-value.jade{color:var(--jade)}
-.kpi-sub{font-size:11.5px;color:var(--ink-dim);margin-top:6px;position:relative}
+.kpi-card::before{content:'';position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.kpi-label{font-size:10.5px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px}
+.kpi-value{font-family:'Fraunces',serif;font-size:29px;font-weight:600;line-height:1.05;color:var(--ink);letter-spacing:-.01em}
+.kpi-value.red{color:var(--red)} .kpi-value.amber{color:var(--amber)} .kpi-value.jade{color:var(--jade)}
+.kpi-sub{font-size:11.5px;color:var(--ink-dim);margin-top:7px;line-height:1.45}
 
-/* ---- CARDS / PANELS ---- */
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:20px}
-.panel-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.panel-title{font-family:'Fraunces',serif;font-size:16px;font-weight:600}
-.panel-sub{font-size:12px;color:var(--ink-dim);margin-top:2px}
+/* ---- PANELS ---- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:20px;box-shadow:var(--shadow-sm)}
+.panel-header{padding:17px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.panel-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;letter-spacing:-.005em}
+.panel-sub{font-size:12.5px;color:var(--ink-dim);margin-top:3px;line-height:1.5}
 
 /* ---- ALERT CARDS ---- */
-.alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;padding:18px 20px}
-.alert-card{border:1px solid var(--line);border-radius:11px;padding:15px 16px;position:relative;overflow:hidden}
-.alert-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px}
+.alert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;padding:20px 22px 22px}
+.alert-card{border:1px solid var(--line);border-radius:12px;padding:17px 18px 14px;position:relative;overflow:hidden;background:var(--surface);box-shadow:var(--shadow-sm)}
+.alert-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .alert-card.status-now::before{background:var(--red)}
 .alert-card.status-soon::before{background:var(--amber)}
 .alert-card.status-ok::before{background:var(--jade)}
 .alert-card.status-oos::before{background:#7A1F1F}
-.alert-sku{font-family:'Fraunces',serif;font-size:15px;font-weight:600;margin-bottom:2px}
-.alert-code{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-dim);margin-bottom:10px}
-.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px}
-.status-pill.status-now{background:var(--red-tint);color:var(--red)}
-.status-pill.status-soon{background:var(--amber-tint);color:var(--amber)}
-.status-pill.status-ok{background:var(--jade-tint);color:var(--jade)}
-.status-pill.status-oos{background:#7A1F1F;color:#fff}
-.status-pill.status-nodata{background:#E4E1E8;color:#4A4152}
-.alert-row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;color:var(--ink-mid)}
-.alert-row b{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-weight:500}
-.alert-action{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);font-size:12px;color:var(--ink-mid)}
+.alert-card.status-nodata::before{background:#9A90A4}
+.alert-card.status-na::before{background:var(--line2)}
+.ac-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.ac-head > div:first-child{min-width:0;margin-right:10px}
+.ac-head .status-pill{flex:0 0 auto}
+.alert-sku{font-family:'Fraunces',serif;font-size:16px;font-weight:600;line-height:1.2}
+.alert-code{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-dim);margin-top:3px}
+.alert-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12.5px;padding:4px 0;color:var(--ink-mid)}
+.alert-row b{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-weight:500;text-align:right}
+.alert-action{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);font-size:12px;color:var(--ink-mid);line-height:1.55}
+.coverage-note{font-size:11.5px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--line2);line-height:1.45}
+.coverage-note.covered{color:var(--jade)} .coverage-note.uncovered{color:var(--red)} .coverage-note.none{color:var(--ink-dim)}
+
+/* ---- US / AMAZON SPLIT ---- */
+.split{margin:7px 0 6px}
+.split-bar{display:flex;height:7px;border-radius:4px;overflow:hidden;background:var(--surface2)}
+.split-bar i{display:block;height:100%}
+.split-legend{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:11px;color:var(--ink-mid);font-family:'IBM Plex Mono',monospace}
+.split-legend .k{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px}
+.ch-us{color:var(--us)} .ch-amz{color:var(--amz)}
+
+/* ---- STATUS PILLS ---- */
+.status-pill,.badge-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:600;
+  font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;
+}
+.status-pill::before,.badge-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+.status-pill.status-now,.badge-pill.status-now{background:var(--red-tint);color:var(--red)}
+.status-pill.status-soon,.badge-pill.status-soon{background:var(--amber-tint);color:var(--amber)}
+.status-pill.status-ok,.badge-pill.status-ok{background:var(--jade-tint);color:var(--jade)}
+.status-pill.status-oos,.badge-pill.status-oos{background:#7A1F1F;color:#fff}
+.status-pill.status-nodata,.badge-pill.status-nodata{background:#E4E1E8;color:#4A4152}
+.status-pill.status-na,.badge-pill.status-na{background:#F0ECEE;color:#9A8C94}
 
 /* ---- TABLES ---- */
 table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);background:var(--surface2);border-bottom:1px solid var(--line);white-space:nowrap}
-td{padding:11px 14px;font-size:13px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{padding:11px 13px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-dim);background:var(--surface3);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 13px;font-size:13px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#FDF9F7}
+tbody tr:hover td{background:#FDF9F7}
 .sku-name{font-weight:600;color:var(--ink)}
-.sku-code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-dim)}
+.sku-code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-dim);white-space:nowrap}
 .num{font-family:'IBM Plex Mono',monospace;font-size:12.5px}
 .num.big{font-size:14px;font-weight:500}
-.num.red{color:var(--red)}
-.num.jade{color:var(--jade)}
-.num.amber{color:var(--amber)}
-.num.dim{color:var(--ink-dim)}
+.num.red{color:var(--red)} .num.jade{color:var(--jade)} .num.amber{color:var(--amber)} .num.dim{color:var(--ink-dim)}
+.sub{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-dim);margin-top:2px;white-space:nowrap}
 .bar-bg{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:5px;width:100%;min-width:70px}
 .bar-fill{height:100%;border-radius:3px}
 
-/* ---- STATUS BADGE ---- */
-.badge-pill{display:inline-block;padding:3px 9px;border-radius:14px;font-size:10.5px;font-weight:600;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.03em}
-.badge-pill.status-now{background:var(--red-tint);color:var(--red)}
-.badge-pill.status-soon{background:var(--amber-tint);color:var(--amber)}
-.badge-pill.status-ok{background:var(--jade-tint);color:var(--jade)}
-.badge-pill.status-oos{background:#7A1F1F;color:#fff}
-.badge-pill.status-nodata{background:#E4E1E8;color:#4A4152}
-
-/* ---- SETTINGS FORM ---- */
-.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px 20px}
+/* ---- FORMS / SETTINGS ---- */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;padding:16px 22px}
 .field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:10.5px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.field label{font-size:10.5px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 .field input,.field select{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:8px 10px;
-  border:1px solid var(--line2);border-radius:7px;background:var(--surface);color:var(--ink);
-  outline:none;transition:.15s;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;padding:9px 11px;border:1px solid var(--line2);border-radius:8px;
+  background:var(--surface);color:var(--ink);outline:none;transition:.15s;
 }
-.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(198,87,122,.12)}
 .sku-settings-block{border-bottom:1px solid var(--line)}
 .sku-settings-block:last-child{border-bottom:none}
-.sku-settings-head{padding:14px 20px 0;display:flex;align-items:center;gap:10px}
+.sku-settings-head{padding:16px 22px 0;display:flex;align-items:center;gap:10px}
 .sku-settings-head .dot{width:9px;height:9px;border-radius:50%}
-.sku-settings-name{font-family:'Fraunces',serif;font-weight:600;font-size:15px}
-.sku-settings-code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-dim)}
-.computed-line{padding:0 20px 16px;font-size:12px;color:var(--ink-mid)}
+.sku-settings-name{font-family:'Fraunces',serif;font-weight:600;font-size:15.5px}
+.sku-settings-code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-dim);margin-left:6px}
+.computed-line{padding:0 22px 16px;font-size:12px;color:var(--ink-mid)}
 .computed-line b{color:var(--accent-deep);font-family:'IBM Plex Mono',monospace}
-.assumption-flag{display:inline-flex;align-items:center;gap:4px;background:var(--amber-tint);color:#8A5D1D;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:8px;font-weight:600}
-
-.month-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:16px 20px}
-.month-field{display:flex;flex-direction:column;gap:4px;align-items:center;background:var(--surface2);border-radius:8px;padding:8px 6px}
-.month-field label{font-size:10px;color:var(--ink-dim);font-weight:600}
-.month-field input{width:100%;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:5px;border:1px solid var(--line2);border-radius:5px;background:var(--surface)}
-
-.mapping-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;padding:9px 20px;border-bottom:1px solid var(--line)}
+.assumption-flag{display:inline-flex;align-items:center;gap:4px;background:var(--amber-tint);color:#8A5D1D;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px;font-weight:600}
+.month-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:18px 22px}
+.month-field{display:flex;flex-direction:column;gap:5px;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 8px}
+.month-field label{font-size:10px;color:var(--ink-dim);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.month-field input{width:100%;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:6px;border:1px solid var(--line2);border-radius:6px;background:var(--surface)}
+.mapping-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;padding:10px 22px;border-bottom:1px solid var(--line)}
 .mapping-row:last-child{border-bottom:none}
-
-.settings-actions{display:flex;gap:9px;padding:16px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
-.btn{padding:9px 16px;border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;border:1px solid transparent;transition:.15s}
-.btn-primary{background:var(--accent);color:#fff}
+.settings-actions{display:flex;gap:9px;padding:16px 22px;border-top:1px solid var(--line);flex-wrap:wrap;align-items:center}
+.btn{padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;border:1px solid transparent;transition:.15s}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 2px rgba(143,52,84,.25)}
 .btn-primary:hover{background:var(--accent-deep)}
 .btn-outline{background:var(--surface);border-color:var(--line2);color:var(--ink-mid)}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent-deep)}
 .save-toast{font-size:12px;color:var(--jade);display:none;align-items:center;gap:6px;font-weight:500}
 
+/* settings: side menu + one pane at a time */
+.settings-layout::after{content:'';display:block;clear:both}
+.settings-content{margin-left:256px;min-width:0}
+.settings-nav{float:left;width:230px;position:sticky;top:104px}
+.settings-nav .sn-item{
+  display:block;width:100%;margin-bottom:3px;text-align:left;border:1px solid transparent;background:transparent;padding:10px 13px;border-radius:10px;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--ink-mid);transition:.15s;line-height:1.3;
+}
+.settings-nav .sn-item small{display:block;font-weight:400;font-size:11px;color:var(--ink-dim);margin-top:2px}
+.settings-nav .sn-item:hover{background:var(--surface2);color:var(--ink)}
+.settings-nav .sn-item.active{background:var(--surface);border-color:var(--line);color:var(--accent-deep);box-shadow:var(--shadow-sm)}
+#sec-settings.js-panes .settings-pane{display:none}
+#sec-settings.js-panes .settings-pane.active{display:block}
+
 /* ---- CHART (simple css bars) ---- */
-.trend-wrap{padding:18px 20px;overflow-x:auto}
+.trend-wrap{padding:20px 22px;overflow-x:auto}
 .trend-chart{display:flex;align-items:flex-end;gap:3px;height:130px;min-width:600px}
 .trend-bar{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent-deep));border-radius:3px 3px 0 0;min-width:4px;position:relative}
 .trend-bar:hover{opacity:.85}
 .trend-axis{display:flex;justify-content:space-between;font-size:9.5px;color:var(--ink-dim);margin-top:6px;font-family:'IBM Plex Mono',monospace;min-width:600px}
+
 
 /* ---- UPLOAD SCREEN ---- */
 #uploadScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:10px}
@@ -282,12 +329,67 @@ tr:hover td{background:#FDF9F7}
 .source-badge.tracked{background:var(--jade-tint);color:var(--jade)}
 .source-badge.projected{background:var(--blue-tint);color:var(--blue)}
 
-@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.upload-zones{grid-template-columns:1fr}}
-@media(max-width:700px){.kpi-grid{grid-template-columns:1fr}.content{padding:16px}.settings-grid{grid-template-columns:repeat(2,1fr)}}
 
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+
+/* ---- VISUALS ---- */
+.chart-wrap{padding:14px 22px 20px;overflow-x:auto}
+.chart-wrap svg{display:block;width:100%;height:auto}
+.chart-wrap svg.wide{min-width:660px}
+.legend{font-size:11.5px;color:var(--ink-mid)}
+.legend span{display:inline-block;white-space:nowrap;margin:0 16px 4px 0}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.spark{margin:4px 0 8px}
+.spark-label{display:block;font-size:10.5px;color:var(--ink-dim);margin-bottom:3px;letter-spacing:.01em}
+.spark svg{display:block;width:100%;height:30px}
+.kpi-extra{margin-top:11px}
+.kpi-extra svg{display:block;width:100%;height:26px}
+.mini-split{display:block;height:6px;border-radius:3px;overflow:hidden;background:var(--surface2);white-space:nowrap;margin-top:11px;font-size:0}
+.mini-split i{display:inline-block;height:100%}
+.pace{margin:6px 0 8px}
+.pace-row{display:table;width:100%;font-size:11.5px;color:var(--ink-mid);padding:2px 0}
+.pace-lab{display:table-cell;width:78px;white-space:nowrap}
+.pace-cell{display:table-cell;vertical-align:middle;padding:0 8px}
+.pace-bar{display:block;height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;font-size:0}
+.pace-bar i{display:block;height:100%;border-radius:4px;background:var(--amz)}
+.pace-row b{display:table-cell;width:78px;text-align:right;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--ink);font-size:11.5px}
+.mix{display:inline-block;width:130px;height:9px;border-radius:5px;overflow:hidden;background:var(--surface2);white-space:nowrap;font-size:0;vertical-align:middle}
+.mix i{display:inline-block;height:100%}
+
+@media(max-width:1180px){
+  .content{padding:6px 24px 48px}
+  .topbar{padding:18px 24px 14px}
+  .upload-zones{grid-template-columns:1fr}
+}
+@media(max-width:960px){
+  .main{margin-left:0}
+  .tb-title{margin-left:50px}
+  .sidebar{transform:translateX(-104%);transition:transform .22s ease;z-index:300;box-shadow:0 24px 60px rgba(43,31,38,.3)}
+  .sidebar.open{transform:none}
+  .sb-overlay.open{display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(43,31,38,.38);z-index:250}
+  .sb-toggle{display:block}
+  .settings-nav{float:none;width:auto;position:static;overflow-x:auto;white-space:nowrap;padding-bottom:8px}
+  .settings-content{margin-left:0}
+  .settings-nav .sn-item{display:inline-block;width:auto;margin-right:4px;white-space:nowrap}
+  .settings-nav .sn-item small{display:none}
+}
+@media(max-width:700px){
+  .content{padding:4px 14px 40px}
+  .topbar{padding:14px}
+  .tb-title h1{font-size:21px}
+  .tb-title{margin-right:52px}
+  .tb-title p{display:none}
+  .asof{display:none}
+  .hbtn span{display:none}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .alert-grid{grid-template-columns:1fr}
+  .settings-grid{grid-template-columns:repeat(2,1fr)}
+  .month-grid{grid-template-columns:repeat(3,1fr)}
+  .seg button{padding:8px 11px}
+}
+
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -363,36 +465,58 @@ tr:hover td{background:#FDF9F7}
 </div>
 
 <div id="app" style="display:none">
-<div class="header">
-  <div class="header-left">
-    <div class="logo"><img src="data:image/png;base64,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" alt="Quasi" class="logo-img"><span>Inventory &amp; Demand Dashboard</span></div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px">
-    <div class="asof" id="asOfLabel">As of —</div>
-    <button class="hbtn" onclick="reloadDashboard()">↑ Load New Data</button>
-  </div>
-</div>
-
-<div class="nav">
-  <div class="nav-tab active" onclick="showTab('dashboard')">Dashboard</div>
-  <div class="nav-tab" onclick="showTab('shopify')">Shopify <span class="badge" id="b-shopify"></span></div>
-  <div class="nav-tab" onclick="showTab('amazon')">Amazon <span class="badge" id="b-amazon"></span></div>
-  <div class="nav-tab" onclick="showTab('reports')">Reports</div>
-  <div class="nav-tab" onclick="showTab('inbounds')">Inbounds <span class="badge" id="b-inbounds"></span></div>
-  <div class="nav-tab" onclick="showTab('forecast')">Forecasting</div>
-  <div class="nav-tab" onclick="showTab('settings')">Settings</div>
-</div>
-
-<div class="content">
+<div class="shell">
+  <div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar(false)"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><img src="data:image/png;base64,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" alt="Quasi" class="logo-img"><small>Inventory &amp; Demand</small></div>
+    <div class="nav-tab active" data-tab="dashboard" onclick="showTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard</span></div>
+    <div class="sb-group">Channels</div>
+    <div class="nav-tab" data-tab="shopify" onclick="showTab('shopify')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-7h6v7"/></svg><span>US · Shopify</span> <span class="badge" id="b-shopify"></span></div>
+    <div class="nav-tab" data-tab="amazon" onclick="showTab('amazon')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span>Amazon · FBA</span> <span class="badge" id="b-amazon"></span></div>
+    <div class="sb-group">Supply</div>
+    <div class="nav-tab" data-tab="inbounds" onclick="showTab('inbounds')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>Inbounds &amp; POs</span> <span class="badge" id="b-inbounds"></span></div>
+    <div class="nav-tab" data-tab="forecast" onclick="showTab('forecast')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span>Forecasting</span></div>
+    <div class="sb-group">Insights</div>
+    <div class="nav-tab" data-tab="reports" onclick="showTab('reports')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Reports</span></div>
+    <div class="sb-footer">
+      <div class="nav-tab" data-tab="settings" onclick="showTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg><span>Settings</span></div>
+      <div class="sb-note">Files you upload are processed in this browser.</div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="sb-toggle" onclick="toggleSidebar()" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="tb-right"><span class="asof" id="asOfLabel">As of —</span><button class="hbtn" onclick="reloadDashboard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Load new data</span></button></div>
+      <div class="tb-title"><h1 id="pageTitle">Dashboard</h1><p id="pageSub">Where every SKU stands right now — and what needs ordering</p></div>
+    </header>
+    <div class="content">
 
   <!-- DASHBOARD -->
   <div class="section active" id="sec-dashboard">
+    <div class="page-tools">
+      <div class="seg" role="tablist" aria-label="Channel view">
+        <button data-scope="all" class="active" onclick="setDashScope('all')">All channels</button>
+        <button data-scope="us" onclick="setDashScope('us')"><span class="dot" style="background:var(--us)"></span>US · 3PL</button>
+        <button data-scope="amz" onclick="setDashScope('amz')"><span class="dot" style="background:var(--amz)"></span>Amazon · FBA</button>
+      </div>
+      <div class="tools-note" id="scopeNote"></div>
+    </div>
     <div id="dashCaveats"></div>
     <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="panel" id="runwayPanel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title" id="runwayTitle">Runway at a glance</div>
+          <div class="panel-sub" id="runwaySub"></div>
+        </div>
+        <div class="legend" id="runwayLegend"></div>
+      </div>
+      <div class="chart-wrap" id="runwayChart"></div>
+    </div>
     <div class="panel">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Reorder alerts — all SKUs</div>
+          <div class="panel-title" id="alertTitle">Reorder alerts — all SKUs</div>
           <div class="panel-sub" id="alertSub"></div>
         </div>
       </div>
@@ -401,15 +525,12 @@ tr:hover td{background:#FDF9F7}
     <div class="panel">
       <div class="panel-header">
         <div>
-          <div class="panel-title">SKU overview — combined channels</div>
-          <div class="panel-sub">Velocity, on-hand inventory, and days of supply across Shopify + Amazon</div>
+          <div class="panel-title" id="dashTableTitle">SKU overview — all channels</div>
+          <div class="panel-sub" id="dashTableSub">Velocity, on-hand and days of supply</div>
         </div>
         <button class="btn btn-outline" onclick="exportDashCSV()">Export CSV</button>
       </div>
-      <div style="overflow-x:auto"><table><thead><tr>
-        <th>SKU</th><th>Shopify vel/day</th><th>Amazon vel/day</th><th>Combined vel/day</th>
-        <th>On-hand (combined)</th><th>Days of supply</th><th>Lead time</th><th>Reorder-by date</th><th>Status</th><th>Suggested order</th><th>Inbound</th>
-      </tr></thead><tbody id="dashBody"></tbody></table></div>
+      <div style="overflow-x:auto"><table><thead><tr id="dashHeadRow"></tr></thead><tbody id="dashBody"></tbody></table></div>
     </div>
     <div class="panel" id="historyPanel" style="display:none">
       <div class="panel-header">
@@ -429,7 +550,7 @@ tr:hover td{background:#FDF9F7}
     <div class="panel">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Daily units sold — top SKUs</div>
+          <div class="panel-title">Daily units sold by SKU</div>
           <div class="panel-sub" id="shopTrendSub"></div>
         </div>
       </div>
@@ -441,14 +562,14 @@ tr:hover td{background:#FDF9F7}
     <div class="panel">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Shopify — SKU detail</div>
+          <div class="panel-title">US · Shopify — SKU detail</div>
           <div class="panel-sub">Sales velocity and warehouse stock (Doral Warehouse, unreserved)</div>
         </div>
         <button class="btn btn-outline" onclick="exportShopCSV()">Export CSV</button>
       </div>
       <div style="overflow-x:auto"><table><thead><tr>
         <th>SKU</th><th>Units sold (period)</th><th>Orders</th><th>Vel/day</th>
-        <th>On-hand</th><th>Committed</th><th>Days of supply</th><th>Status</th>
+        <th>On-hand</th><th>Committed</th><th>Days of supply</th><th>SKU status (all channels)</th>
       </tr></thead><tbody id="shopBody"></tbody></table></div>
     </div>
   </div>
@@ -490,8 +611,7 @@ tr:hover td{background:#FDF9F7}
   <!-- REPORTS -->
   <div class="section" id="sec-reports">
     <div class="report-controls">
-      <div class="panel-title" style="font-size:20px">Reports</div>
-      <div class="panel-sub">Generate a report to review or share with the team — print it, copy a text summary, or export the data.</div>
+      <div class="panel-sub" style="margin-top:0">Pick a report, then print it, copy a text summary for Slack, or export the data.</div>
       <div class="report-pills">
         <div class="report-pill active" onclick="setReportType('daily')">Daily</div>
         <div class="report-pill" onclick="setReportType('weekly')">Weekly</div>
@@ -512,6 +632,16 @@ tr:hover td{background:#FDF9F7}
   <div class="section" id="sec-inbounds">
     <div id="inboundCaveats"></div>
     <div class="kpi-grid" id="inboundKpiGrid"></div>
+    <div class="panel" id="pipelinePanel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Arrivals timeline</div>
+          <div class="panel-sub">Each purchase order from the day it was placed to its due date. Red means the due date has passed and it hasn’t been marked received.</div>
+        </div>
+        <div class="legend"><span><i style="background:#B3792F"></i>In transit</span><span><i style="background:#3E7D5C"></i>Received</span><span><i style="background:#9A90A4"></i>Planned</span><span><i style="background:#B23B3B"></i>Past due</span></div>
+      </div>
+      <div class="chart-wrap" id="pipelineChart"></div>
+    </div>
     <div class="panel">
       <div class="panel-header">
         <div>
@@ -564,12 +694,13 @@ tr:hover td{background:#FDF9F7}
       <div class="panel-header">
         <div>
           <div class="panel-title">Supply chain breakdown</div>
-          <div class="panel-sub" id="supplyChainSub">US/Amazon on-hand vs. China buffer stock (finished goods not yet shipped) — closing a real blind spot: on-hand alone doesn't show what's already produced and waiting.</div>
+          <div class="panel-sub" id="supplyChainSub">US 3PL and Amazon FBA on-hand vs. China buffer stock (finished goods not yet shipped) — closing a real blind spot: on-hand alone doesn't show what's already produced and waiting.</div>
         </div>
+        <div class="legend" id="supplyChainLegend"></div>
         <button class="btn btn-outline" onclick="exportSupplyChainCSV()">Export CSV</button>
       </div>
       <div style="overflow-x:auto"><table><thead><tr>
-        <th>SKU</th><th>US + Amazon on-hand</th><th>China buffer</th><th>Total available</th><th>Days of supply (on-hand only)</th><th>Days of supply (incl. China)</th><th>China bridge</th>
+        <th>SKU</th><th>US · 3PL on-hand</th><th>Amazon · FBA on-hand</th><th>China buffer</th><th>Total available</th><th>Where it sits</th><th>Days of supply (on-hand only)</th><th>Days of supply (incl. China)</th><th>China bridge</th>
       </tr></thead><tbody id="supplyChainBody"></tbody></table></div>
       <div class="empty-state" id="supplyChainEmpty" style="display:none">No China stock data connected — upload the ops workbook in Settings to see this breakdown.</div>
     </div>
@@ -645,8 +776,18 @@ tr:hover td{background:#FDF9F7}
   <!-- SETTINGS -->
   <div class="section" id="sec-settings">
     <div class="caveat info"><span>ℹ️</span><div><b>These are working assumptions, not confirmed numbers.</b> Lead times and container sizes below are based on Sylvia's Slack answers on 2026-08-13. Anything marked "assumed" wasn't stated explicitly and should be confirmed. Seasonality defaults to no adjustment until the team responds. All values here are editable and saved automatically in your browser.</div></div>
+  <div class="settings-layout">
+    <nav class="settings-nav" aria-label="Settings sections">
+      <div class="sn-item active" role="button" tabindex="0" data-pane="lead" onclick="showSettingsPane('lead')">Lead times &amp; reorder<small>Timing, containers, safety stock</small></div>
+      <div class="sn-item" role="button" tabindex="0" data-pane="season" onclick="showSettingsPane('season')">Seasonality<small>Monthly demand multiplier</small></div>
+      <div class="sn-item" role="button" tabindex="0" data-pane="data" onclick="showSettingsPane('data')">Data &amp; team sharing<small>Live sheet, publishing, uploads</small></div>
+      <div class="sn-item" role="button" tabindex="0" data-pane="amazon" onclick="showSettingsPane('amazon')">Amazon SKU mapping<small>Match listings to SKUs</small></div>
+      <div class="sn-item" role="button" tabindex="0" data-pane="freeze" onclick="showSettingsPane('freeze')">Supply freezes<small>Chinese New Year &amp; closures</small></div>
+      <div class="sn-item" role="button" tabindex="0" data-pane="handling" onclick="showSettingsPane('handling')">Data handling<small>Refunds and saved data</small></div>
+    </nav>
+    <div class="settings-content">
 
-    <div class="panel">
+    <div class="panel settings-pane" data-pane="lead">
       <div class="panel-header">
         <div><div class="panel-title">Lead time &amp; reorder settings — per SKU</div>
         <div class="panel-sub">Packaging + production + shipping = total lead time. Reorder point = lead time + safety stock buffer.</div></div>
@@ -654,7 +795,7 @@ tr:hover td{background:#FDF9F7}
       <div id="skuSettingsList"></div>
     </div>
 
-    <div class="panel">
+    <div class="panel settings-pane" data-pane="season">
       <div class="panel-header">
         <div><div class="panel-title">Seasonality multiplier</div>
         <div class="panel-sub">Global monthly multiplier applied to forecasted demand during the lead-time window. Defaults to 1.0x (no adjustment) — update once the team confirms patterns.</div></div>
@@ -662,7 +803,7 @@ tr:hover td{background:#FDF9F7}
       <div class="month-grid" id="monthGrid"></div>
     </div>
 
-    <div class="panel">
+    <div class="panel settings-pane" data-pane="data">
       <div class="panel-header">
         <div><div class="panel-title">Connected data sources</div>
         <div class="panel-sub">Bring in the team's Daily Sales history, China/US/Amazon stock, and real safety-stock days — live if possible, uploaded if not.</div></div>
@@ -717,7 +858,7 @@ tr:hover td{background:#FDF9F7}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel settings-pane" data-pane="amazon">
       <div class="panel-header">
         <div><div class="panel-title">Amazon SKU mapping</div>
         <div class="panel-sub">Amazon SKU codes detected in your uploaded files, mapped to Quasi's 5 master SKUs. Confirm these are correct — SKU naming differs between platforms.</div></div>
@@ -725,7 +866,7 @@ tr:hover td{background:#FDF9F7}
       <div id="mappingList"></div>
     </div>
 
-    <div class="panel">
+    <div class="panel settings-pane" data-pane="freeze">
       <div class="panel-header">
         <div><div class="panel-title">Planned supply freezes</div>
         <div class="panel-sub">Known windows where China production stops entirely (e.g. Chinese New Year) — the Forecasting tab won't suggest placing an order during one, and pulls it earlier instead.</div></div>
@@ -736,7 +877,7 @@ tr:hover td{background:#FDF9F7}
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel settings-pane" data-pane="handling">
       <div class="panel-header">
         <div><div class="panel-title">Data handling</div></div>
       </div>
@@ -762,9 +903,12 @@ tr:hover td{background:#FDF9F7}
         <span class="save-toast" id="saveToast">✓ Saved</span>
       </div>
     </div>
+    </div></div><!-- /settings-content, /settings-layout -->
   </div>
 
 </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
 </div><!-- /app -->
 
 <script>
@@ -796,6 +940,10 @@ const MASTER_SKUS = [
 // order regardless of which mask(s) it contains (confirmed with Sylvia, 2026-09). Velocity for
 // these is driven by total order count, not by any per-SKU quantity in Products Summary.
 const ORDER_BASED_SKUS = new Set(MASTER_SKUS.filter(s=>s.orderBased).map(s=>s.code));
+// Cross-SKU totals (units sold, combined velocity, total on-hand) add up PRODUCT units only. Thank You Cards are a
+// per-order consumable — their "units" are order counts — so they show per SKU everywhere but stay out of the totals.
+const isProductSku = code => !ORDER_BASED_SKUS.has(code);
+const PRODUCT_SKU_COUNT = MASTER_SKUS.filter(s=>!s.orderBased).length;
 
 function defaultSettings() {
   return {
@@ -2006,6 +2154,11 @@ function computeBaseMetrics(sku){
   // Only available once connected via the ops workbook upload; 0 otherwise (not a gap, just unknown).
   const chinaStock = (CHINA_STOCK && CHINA_STOCK[sku]) ? CHINA_STOCK[sku].china : 0;
   const shipOnlyDays = cfg.shipOnlyDays !== undefined ? cfg.shipOnlyDays : (cfg.shipMinDays+cfg.shipMaxDays)/2;
+  // ---- Channel split (additive — nothing above or below changes how the combined figure is computed) ----
+  // Amazon FBA stock projected forward on its own sales pace; the US 3PL holds the rest. Defining US as
+  // "combined minus Amazon" guarantees the two always add up to the combined on-hand, to the unit.
+  const amzOnHandNow = Math.min(combinedOnHand, Math.max(0, amzOnHand - amzVel*daysStale));
+  const usOnHandNow = combinedOnHand - amzOnHandNow;
   // An order-based SKU (Thank You Cards) with zero velocity almost never means "genuinely no demand" —
   // it means the order-count data isn't there yet (e.g. a resumed session saved before this SKU
   // existed, or a Google Sheet connection that only ever knows the 5 masks). Flagging this explicitly
@@ -2013,18 +2166,32 @@ function computeBaseMetrics(sku){
   const noVelocityData = ORDER_BASED_SKUS.has(sku) && !D.shopify.orderBasedTotal;
   return { sku, shopVel, amzVel, combinedVel, shopOnHand, amzOnHand, snapshotOnHand, combinedOnHand, daysStale,
     leadTime: lt, safetyDays: cfg.safetyDays, container: cfg.container, onAmazon: isOnAmazon(sku),
-    chinaStock, shipOnlyDays, noVelocityData };
+    chinaStock, shipOnlyDays, noVelocityData, usOnHandNow, amzOnHandNow };
 }
 
 // 30-day vs 90-day velocity computed straight from whatever daily sales history is loaded (the
 // uploaded Orders CSV, or — much better — the connected long history). No extra data source needed;
 // this is the same idea as the ops team's own "Momentum" column, just derived from data we already have.
 function velocityMomentum(sku){
-  const dates = Object.keys(D.shopify.dailyUnits||{}).sort();
-  if (dates.length < 14) return null; // not enough history for a meaningful comparison
+  // Order-based SKUs (Thank You Cards) only have data for the days covered by the uploaded Orders file. Measured
+  // against the longer sales history, the missing days would count as zero sales and read as a huge surge, so they
+  // are measured over their own date range only (every calendar day in it; a day with no orders counts as zero).
+  const own = ORDER_BASED_SKUS.has(sku) ? (D.shopify.orderBasedDaily || {}) : null;
+  let dates;
+  if (own) {
+    const keys = Object.keys(own).sort();
+    dates = [];
+    if (keys.length) for (let t = new Date(keys[0]+'T00:00:00Z').getTime(), end = new Date(keys[keys.length-1]+'T00:00:00Z').getTime(); t <= end; t += 86400000) dates.push(new Date(t).toISOString().slice(0,10));
+  } else {
+    dates = Object.keys(D.shopify.dailyUnits||{}).sort();
+  }
+  // Masks need 14+ days (they come with months of history). The cards need 45+: with a shorter series the 30-day and
+  // 90-day windows are nearly the same days, so the ratio sits near 1.0 and could not show a real change either way.
+  if (dates.length < (own ? 45 : 14)) return null; // not enough history for a meaningful comparison
+  const valueOn = d => own ? (own[d]||0) : ((D.shopify.dailyUnits[d]||{})[sku]||0);
   const sum = (days) => {
     const slice = dates.slice(-days);
-    const total = slice.reduce((s,d)=> s + ((D.shopify.dailyUnits[d]||{})[sku]||0), 0);
+    const total = slice.reduce((t,d)=> t + valueOn(d), 0);
     return { avg: total/slice.length, days: slice.length };
   };
   const d30 = sum(Math.min(30, dates.length));
@@ -2089,9 +2256,24 @@ function computeSkuMetrics(sku){
 
   const momentum = velocityMomentum(sku);
 
+  // Channel runway: each channel's own stock against its own sales pace. This is informational — the
+  // purchase decision (status above) still looks at the combined total because both channels are fed
+  // from the same orders.
+  const now = new Date();
+  const usDaysOfSupply = daysUntilDepleted(now, base.usOnHandNow, base.shopVel);
+  const amzDaysOfSupply = base.onAmazon ? daysUntilDepleted(now, base.amzOnHandNow, base.amzVel) : null;
+  function channelStatus(onHand, vel, dos){
+    if (vel <= 0) return onHand > 0 ? 'ok' : 'na';
+    if (onHand <= 0) return 'oos';
+    return dos <= lt ? 'now' : dos <= reorderPointDays ? 'soon' : 'ok';
+  }
+  const usStatus = base.noVelocityData ? 'nodata' : channelStatus(base.usOnHandNow, base.shopVel, usDaysOfSupply);
+  const amzStatus = base.onAmazon ? channelStatus(base.amzOnHandNow, base.amzVel, amzDaysOfSupply) : 'na';
+
   return { ...base, seasonMult, daysOfSupply, reorderPointDays, status, reorderByDate, overdueDays,
     inboundQty, inboundNextArrival, inboundCoverage, inboundRows: manualInbound.rows,
-    chinaBridge, daysOfSupplyWithChina, momentum };
+    chinaBridge, daysOfSupplyWithChina, momentum,
+    usDaysOfSupply, amzDaysOfSupply, usStatus, amzStatus, amzInboundQty };
 }
 
 function allSkuMetrics(){ return MASTER_SKUS.map(s=>computeSkuMetrics(s.code)); }
@@ -2100,7 +2282,7 @@ function allSkuMetrics(){ return MASTER_SKUS.map(s=>computeSkuMetrics(s.code)); 
 // =========================================================================
 // RENDER — shared helpers
 // =========================================================================
-function statusLabel(s){ return {now:'Reorder now',soon:'Reorder soon',ok:'Healthy',oos:'Out of stock',nodata:'No data'}[s]; }
+function statusLabel(s){ return {now:'Reorder now',soon:'Reorder soon',ok:'Healthy',oos:'Out of stock',nodata:'No data',na:'Not sold'}[s]; }
 function inboundCoverageLine(m){
   if (m.inboundQty<=0) return `<div class="coverage-note none">No inbound shipments tracked for this SKU.</div>`;
   const qtyStr = `<b class="mono">${m.inboundQty.toLocaleString('en-US')}</b> units inbound`;
@@ -2173,53 +2355,348 @@ function renderCaveats(){
 // =========================================================================
 // DASHBOARD TAB
 // =========================================================================
-function renderDashboard(){
-  const metrics = allSkuMetrics();
-  const totalVel = metrics.reduce((s,m)=>s+m.combinedVel,0);
-  const totalOnHand = metrics.reduce((s,m)=>s+m.combinedOnHand,0);
-  const reorderNow = metrics.filter(m=>m.status==='now'||m.status==='oos'||m.status==='nodata').length;
-  const soonest = metrics.filter(m=>isFinite(m.daysOfSupply)).sort((a,b)=>a.daysOfSupply-b.daysOfSupply)[0];
+// =========================================================================
+// DASHBOARD — three views of the same numbers: all channels combined (the view that drives reorder
+// decisions), the US 3PL on its own, and Amazon FBA on its own.
+// =========================================================================
+// =========================================================================
+// VISUAL HELPERS — small hand-built SVG charts (no libraries). Colors are literal values so they draw
+// identically everywhere. Every helper returns '' when there is nothing meaningful to draw.
+// =========================================================================
+const VC = { us:'#C6577A', amz:'#3D6E96', china:'#B3792F', jade:'#3E7D5C', amber:'#B3792F', red:'#B23B3B', dark:'#7A1F1F',
+             ink:'#2B1F26', mid:'#5E4E58', dim:'#8B7B84', line:'#E2D4CC', grid:'#F0E7E2', track:'#F7EEEA', grey:'#9A90A4', na:'#D9CFCB' };
+const SKU_COLORS = ['#C6577A', '#3D6E96', '#B3792F', '#3E7D5C', '#8B6BB0', '#2A9D8F'];
+const svgEsc = t => String(t==null ? '' : t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const statusColor = st => ({now:VC.red, soon:VC.amber, ok:VC.jade, oos:VC.dark, nodata:VC.grey, na:VC.na}[st] || VC.grey);
+const clip = (t, n) => { t = String(t==null?'':t); return t.length>n ? t.slice(0,n-1)+'…' : t; };
+function niceMax(v){
+  if (!(v>0) || !isFinite(v)) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), n = v/p;
+  return (n<=1 ? 1 : n<=2 ? 2 : n<=2.5 ? 2.5 : n<=5 ? 5 : 10) * p;
+}
+function shortNum(v){
+  v = Math.round(v);
+  if (v >= 1e6) return (v/1e6).toFixed(v>=1e7 ? 0 : 1).replace(/\.0$/,'') + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(v>=1e4 ? 0 : 1).replace(/\.0$/,'') + 'k';
+  return String(v);
+}
+const dayTxt = d => Number.isFinite(d) ? Math.round(d).toLocaleString('en-US')+'d' : '∞';
 
-  document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Combined sales velocity</div><div class="kpi-value">${totalVel.toFixed(1)}</div><div class="kpi-sub">units/day across all SKUs &amp; channels</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total on-hand inventory</div><div class="kpi-value">${fmtNum(totalOnHand)}</div><div class="kpi-sub">units across Shopify warehouse + Amazon FBA</div></div>
-    <div class="kpi-card"><div class="kpi-label">SKUs needing reorder</div><div class="kpi-value ${reorderNow>0?'red':'jade'}">${reorderNow}</div><div class="kpi-sub">of ${metrics.length} total SKUs</div></div>
-    <div class="kpi-card"><div class="kpi-label">Next reorder due</div><div class="kpi-value ${soonest && soonest.status!=='ok' ? 'amber':''}">${soonest ? skuName(soonest.sku) : '—'}</div><div class="kpi-sub">${soonest ? (soonest.overdueDays>0 ? 'overdue by '+soonest.overdueDays+'d' : 'by '+soonest.reorderByDate) : 'no data'}</div></div>
-  `;
+// ---- sparkline: a tiny trend line, stretched to the width of its container ----
+function sparklineSVG(values, color){
+  const v = (values||[]).map(x=>Number.isFinite(x) ? x : 0);
+  if (v.length < 2) return '';
+  const W = 120, H = 30, pad = 3, max = Math.max(...v), min = 0, span = max - min;   // zero baseline: a small wobble stays small
+  if (!(max > 0)) return '';
+  const px = i => (i/(v.length-1))*W;
+  const py = val => span>0 ? H-pad-((val-min)/span)*(H-pad*2) : H/2;
+  const pts = v.map((val,i)=>`${px(i).toFixed(1)},${py(val).toFixed(1)}`).join(' ');
+  const c = color || VC.us;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="trend"><polygon points="0,${H} ${pts} ${W},${H}" fill="${c}" fill-opacity=".13"/><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+// Daily units for one SKU over the last N days. Thank You Cards only have data for the days the Orders file covers.
+function dailySeries(sku, days){
+  days = days || 30;
+  if (ORDER_BASED_SKUS.has(sku)) { const o = D.shopify.orderBasedDaily || {}; return Object.keys(o).sort().slice(-days).map(k=>o[k]||0); }
+  return Object.keys(D.shopify.dailyUnits||{}).sort().slice(-days).map(d=>((D.shopify.dailyUnits[d]||{})[sku])||0);
+}
+function totalDailySeries(days){ // product SKUs only
+  return Object.keys(D.shopify.dailyUnits||{}).sort().slice(-(days||30))
+    .map(d=>MASTER_SKUS.reduce((t,s)=>t+(isProductSku(s.code) ? (((D.shopify.dailyUnits[d]||{})[s.code])||0) : 0), 0));
+}
+function sparkBlock(sku, label){
+  const ser = dailySeries(sku, 30);
+  if (ser.length < 7 || ser.every(x=>!x)) return '';
+  return `<div class="spark"><span class="spark-label">${label}${ORDER_BASED_SKUS.has(sku)?' (orders)':''} · last ${ser.length} days</span>${sparklineSVG(ser, VC.us)}</div>`;
+}
+// Amazon has no per-day series in the FBA report, only 7-day and 30-day totals — compare the two paces.
+function amzPaceHTML(sku){
+  let t7 = 0, t30 = 0;
+  Object.entries(SETTINGS.amazonMapping||{}).forEach(([a,mm])=>{ if (mm===sku && D.amazon.fba[a]) { t7 += D.amazon.fba[a].t7||0; t30 += D.amazon.fba[a].t30||0; } });
+  const r7 = t7/7, r30 = t30/30, mx = Math.max(r7, r30);
+  if (!(mx > 0)) return '';
+  const row = (lab, r) => `<div class="pace-row"><span class="pace-lab">${lab}</span><span class="pace-cell"><span class="pace-bar"><i style="width:${Math.max(3, r/mx*100).toFixed(1)}%"></i></span></span><b>${r.toFixed(0)}/day</b></div>`;
+  return `<div class="pace"><span class="spark-label">Sales pace</span>${row('Last 7 days', r7)}${row('Last 30 days', r30)}</div>`;
+}
+function miniSplitBar(parts){ // parts: [{v,color}]
+  const t = parts.reduce((s,p)=>s+Math.max(0,p.v),0);
+  if (!(t > 0)) return '';
+  return `<div class="mini-split">${parts.map(p=>`<i style="width:${(Math.max(0,p.v)/t*100).toFixed(2)}%;background:${p.color}"></i>`).join('')}</div>`;
+}
+function mixBarHTML(us, amz, china){
+  const t = us + amz + china;
+  if (!(t > 0)) return '<span class="num dim">—</span>';
+  const pc = v => (Math.max(0,v)/t*100).toFixed(1);
+  return `<span class="mix" title="US ${fmtNum(us)} · Amazon ${fmtNum(amz)} · China ${fmtNum(china)}"><i style="width:${pc(us)}%;background:${VC.us}"></i><i style="width:${pc(amz)}%;background:${VC.amz}"></i><i style="width:${pc(china)}%;background:${VC.china}"></i></span>`;
+}
 
-  document.getElementById('alertSub').textContent = `${reorderNow} SKU${reorderNow!==1?'s':''} need attention right now`;
-  document.getElementById('alertGrid').innerHTML = metrics.map(m=>`
-    <div class="alert-card status-${m.status}">
-      <div class="alert-sku">${skuName(m.sku)}</div>
-      <div class="alert-code">${m.sku}</div>
-      <div class="status-pill status-${m.status}">${statusLabel(m.status)}</div>
+// ---- runway chart: days of supply per SKU against the lead-time and reorder-point markers ----
+function runwayChartSVG(items){
+  // items: [{ label, dos, lead, rp, status, note }]
+  if (!items.length) return '';
+  const finite = items.map(i=>i.dos).filter(Number.isFinite), maxLead = Math.max(0, ...items.map(i=>i.lead||0));
+  const domain = Math.max(100, Math.min(200, Math.ceil(Math.max(maxLead*1.35, ...(finite.length ? finite : [0]))/10)*10));
+  const W = 880, L = 176, R = 150, top = 52, rowH = 42, x0 = L, bw = W - L - R, H = top + items.length*rowH + 10;
+  const X = d => x0 + Math.max(0, Math.min(1, d/domain))*bw;
+  const step = domain > 120 ? 40 : 30;
+  let g = '';
+  for (let t = 0; t <= domain; t += step) g += `<line x1="${X(t)}" y1="${top-8}" x2="${X(t)}" y2="${H-8}" stroke="${VC.grid}" stroke-width="1"/><text x="${X(t)}" y="${top-14}" text-anchor="middle" font-size="10" fill="${VC.dim}" font-family="IBM Plex Mono, monospace">${t}d</text>`;
+  const legend = `<line x1="${x0}" y1="14" x2="${x0}" y2="28" stroke="${VC.ink}" stroke-width="2"/><text x="${x0+8}" y="25" font-size="11" fill="${VC.mid}" font-family="Inter, sans-serif">Lead time</text>`
+               + `<line x1="${x0+84}" y1="14" x2="${x0+84}" y2="28" stroke="${VC.amber}" stroke-width="2" stroke-dasharray="3 2"/><text x="${x0+92}" y="25" font-size="11" fill="${VC.mid}" font-family="Inter, sans-serif">Reorder point</text>`;
+  const rows = items.map((it,i)=>{
+    const cy = top + i*rowH + rowH/2, col = statusColor(it.status);
+    const dos = Number.isFinite(it.dos) ? Math.max(0, it.dos) : (it.dos===Infinity ? Infinity : 0);
+    const w = dos===Infinity ? bw : Math.min(bw, (dos/domain)*bw);
+    const capped = dos===Infinity || dos > domain;
+    let bar = `<rect x="${x0}" y="${cy-8}" width="${bw}" height="16" rx="8" fill="${VC.track}"/>`;
+    if (it.status !== 'nodata' && it.status !== 'na' && w > 0) bar += `<rect x="${x0}" y="${cy-8}" width="${Math.max(w, 8).toFixed(1)}" height="16" rx="8" fill="${col}"/>`;
+    if (capped && it.status !== 'nodata' && it.status !== 'na') bar += `<polygon points="${x0+bw-16},${cy-4} ${x0+bw-9},${cy} ${x0+bw-16},${cy+4}" fill="#fff" fill-opacity=".9"/>`;
+    const marks = (it.lead>0 ? `<line x1="${X(it.lead)}" y1="${cy-13}" x2="${X(it.lead)}" y2="${cy+13}" stroke="${VC.ink}" stroke-width="2"/>` : '')
+                + (it.rp>0 && Math.abs(it.rp-it.lead)>=1 ? `<line x1="${X(it.rp)}" y1="${cy-13}" x2="${X(it.rp)}" y2="${cy+13}" stroke="${VC.amber}" stroke-width="2" stroke-dasharray="3 2"/>` : '');
+    const val = it.status==='nodata' ? 'no data' : it.status==='na' ? 'not sold' : (dos===Infinity ? '∞' : dayTxt(dos));
+    return `<text x="0" y="${cy+4}" font-size="13" font-weight="600" fill="${VC.ink}" font-family="Inter, sans-serif">${svgEsc(clip(it.label, 22))}</text>`
+      + bar + marks
+      + `<text x="${W}" y="${cy-1}" text-anchor="end" font-size="14" font-weight="600" fill="${it.status==='nodata'||it.status==='na' ? VC.dim : col}" font-family="IBM Plex Mono, monospace">${svgEsc(val)}</text>`
+      + (it.note ? `<text x="${W}" y="${cy+13}" text-anchor="end" font-size="10.5" fill="${VC.dim}" font-family="Inter, sans-serif">${svgEsc(clip(it.note, 30))}</text>` : '');
+  }).join('');
+  return `<svg class="wide" viewBox="0 0 ${W} ${H}" role="img" aria-label="Days of supply by SKU">${g}${legend}${rows}</svg>`;
+}
+
+// ---- stacked area: composition of daily sales, total height = units sold that day ----
+function stackedAreaSVG(dates, series){
+  const n = dates.length;
+  if (n < 2 || !series.length) return '';
+  const W = 900, H = 260, L = 52, R = 14, T = 14, B = 30, pw = W-L-R, ph = H-T-B;
+  const totals = dates.map((_,i)=>series.reduce((t,s)=>t+(s.values[i]||0),0));
+  const maxV = niceMax(Math.max(...totals, 1));
+  const X = i => L + (i/(n-1))*pw, Y = v => T + ph - (v/maxV)*ph;
+  let base = new Array(n).fill(0), paths = '';
+  series.forEach(s=>{
+    const topLine = base.map((b,i)=>b+(s.values[i]||0));
+    const d = topLine.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join('')
+            + base.map((b,k)=>{ const i=n-1-k; return `L${X(i).toFixed(1)},${Y(base[i]).toFixed(1)}`; }).join('') + 'Z';
+    paths += `<path d="${d}" fill="${s.color}" fill-opacity=".88"><title>${svgEsc(s.name)}</title></path>`;
+    base = topLine;
+  });
+  let grid = '';
+  for (let t = 0; t <= 4; t++) { const v = maxV*t/4; grid += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W-R}" y2="${Y(v).toFixed(1)}" stroke="${VC.grid}" stroke-width="1"/><text x="${L-8}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="${VC.dim}" font-family="IBM Plex Mono, monospace">${shortNum(v)}</text>`; }
+  const marks = Math.min(6, n); let xl = '';
+  for (let k = 0; k < marks; k++) { const i = Math.round(k*(n-1)/(marks-1)); xl += `<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="${k===0?'start':k===marks-1?'end':'middle'}" font-size="10" fill="${VC.dim}" font-family="IBM Plex Mono, monospace">${svgEsc(dates[i].slice(5))}</text>`; }
+  return `<svg class="wide" viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily units sold by SKU">${grid}${paths}${xl}</svg>`;
+}
+
+// ---- arrivals timeline: each purchase order from the day it was placed to its due date ----
+function pipelineSVG(rows, todayStr){
+  const DAY = 864e5, t0 = Date.parse(todayStr+'T00:00:00Z');
+  if (!isFinite(t0)) return '';
+  let items = rows.map(r=>({ r, s:Date.parse((r.orderDate||'')+'T00:00:00Z'), e:Date.parse((r.estDelivery||'')+'T00:00:00Z') })).filter(i=>isFinite(i.s) && isFinite(i.e));
+  const winStart = t0 - 75*DAY;
+  items = items.filter(i=>i.e >= winStart).sort((a,b)=>a.e-b.e).slice(0, 14);   // older, already-landed orders are left off
+  if (!items.length) return '';
+  const min = Math.max(winStart, Math.min(t0 - 21*DAY, ...items.map(i=>i.s)));
+  const max = Math.min(t0 + 220*DAY, Math.max(t0 + 60*DAY, ...items.map(i=>i.e)) + 6*DAY);
+  const W = 900, L = 210, R = 96, top = 36, rowH = 40, H = top + items.length*rowH + 26, pw = W-L-R;
+  const X = t => L + Math.max(0, Math.min(1, (t-min)/(max-min)))*pw;
+  let grid = '';
+  const startMonth = new Date(min); let m = Date.UTC(startMonth.getUTCFullYear(), startMonth.getUTCMonth()+1, 1);
+  for (; m < max; m = Date.UTC(new Date(m).getUTCFullYear(), new Date(m).getUTCMonth()+1, 1)) {
+    const d = new Date(m); grid += `<line x1="${X(m).toFixed(1)}" y1="${top-10}" x2="${X(m).toFixed(1)}" y2="${H-18}" stroke="${VC.grid}"/><text x="${(X(m)+4).toFixed(1)}" y="${top-16}" font-size="10.5" fill="${VC.dim}" font-family="Inter, sans-serif">${d.toLocaleString('en-US',{month:'short',timeZone:'UTC'})}${d.getUTCMonth()===0?' '+d.getUTCFullYear():''}</text>`;
+  }
+  const todayLine = `<line x1="${X(t0).toFixed(1)}" y1="${top-10}" x2="${X(t0).toFixed(1)}" y2="${H-18}" stroke="${VC.red}" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${X(t0).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${VC.red}" font-family="Inter, sans-serif">Today</text>`;
+  const body = items.map((it,i)=>{
+    const cy = top + i*rowH + rowH/2, r = it.r, overdue = r.status==='in transit' && it.e < t0;
+    const col = r.status==='received' ? VC.jade : overdue ? VC.red : r.status==='in transit' ? VC.amber : VC.grey;
+    const xs = X(it.s), xe = X(it.e), w = Math.max(8, xe-xs);
+    const dstr = new Date(it.e).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
+    return `<text x="0" y="${cy-2}" font-size="12.5" font-weight="600" fill="${VC.ink}" font-family="Inter, sans-serif">${svgEsc(clip(skuName(r.sku), 24))}</text>`
+      + `<text x="0" y="${cy+12}" font-size="10.5" fill="${VC.dim}" font-family="IBM Plex Mono, monospace">${svgEsc(clip(r.poNumber||'no PO yet', 14))} · ${svgEsc(shortNum(r.qty||0))} units</text>`
+      + `<rect x="${xs.toFixed(1)}" y="${cy-8}" width="${w.toFixed(1)}" height="16" rx="8" fill="${col}" fill-opacity="${r.status==='planned'?'.45':'.95'}"${r.status==='planned' ? ` stroke="${VC.grey}" stroke-dasharray="3 2"` : ''}><title>${svgEsc(skuName(r.sku))} — ${svgEsc(r.status)}${overdue?' (past due)':''}</title></rect>`
+      + `<text x="${(xe+8).toFixed(1)}" y="${cy+4}" font-size="11" font-weight="600" fill="${overdue?VC.red:VC.mid}" font-family="IBM Plex Mono, monospace">${dstr}</text>`;
+  }).join('');
+  return `<svg class="wide" viewBox="0 0 ${W} ${H}" role="img" aria-label="Purchase order arrivals timeline">${grid}${todayLine}${body}</svg>`;
+}
+
+let dashScope = (function(){ try { const v = localStorage.getItem('quasi_dash_scope'); return (v==='us'||v==='amz') ? v : 'all'; } catch(e){ return 'all'; } })();
+function setDashScope(sc){
+  dashScope = (sc==='us'||sc==='amz') ? sc : 'all';
+  try { localStorage.setItem('quasi_dash_scope', dashScope); } catch(e){}
+  if (D) renderDashboard();
+}
+const SCOPE_NOTE = {
+  all: 'Reorder status uses the combined total — both channels draw on the same purchase orders.',
+  us:  'Stock at the US 3PL against Shopify sales pace. New containers and the China buffer feed this side.',
+  amz: 'Amazon FBA stock against Amazon\u2019s 30-day sales pace, from the FBA report.',
+};
+const runwayLabel = st => ({now:'Low runway', soon:'Watch', ok:'Healthy', oos:'Out of stock', nodata:'No data', na:'Not sold'}[st] || st);
+function kpiCard(label, value, sub, cls, extra){
+  return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value ${cls||''}">${value}</div><div class="kpi-sub">${sub}</div>${extra||''}</div>`;
+}
+const velSpark = () => { const ser = totalDailySeries(30); const sv = sparklineSVG(ser, VC.us); return ser.length>=7 && sv ? `<div class="kpi-extra"><span class="spark-label">US sales · last ${ser.length} days</span>${sv}</div>` : ''; };
+const isLowStatus = st => st==='now' || st==='oos' || st==='nodata';
+function poActionHtml(m){
+  return m.status==='nodata' ? `<div class="alert-action" style="color:var(--ink-mid)">⚠️ Can't calculate — order-count data is missing for this SKU (needs a fresh Orders file upload, not just a resumed session or Google Sheet connection). Status shown is not a real reading.</div>`
+    : (m.status==='now'||m.status==='oos') ? `<div class="alert-action">📦 ${m.overdueDays>0 ? `Overdue by <b class="mono">${m.overdueDays}d</b> — place PO now` : 'Place PO now'} — suggested qty <b class="mono">${m.container.toLocaleString('en-US')}</b> (1 container)</div>`
+    : m.status==='soon' ? `<div class="alert-action">⏳ Reorder by <b class="mono">${m.reorderByDate}</b></div>` : '';
+}
+function splitBar(m){
+  const us = Math.max(0, m.usOnHandNow), az = m.onAmazon ? Math.max(0, m.amzOnHandNow) : 0, tot = us + az;
+  const usPct = tot>0 ? Math.round(us/tot*100) : 100, azPct = tot>0 ? 100-usPct : 0;
+  return `<div class="split"><div class="split-bar"><i style="width:${usPct}%;background:var(--us)"></i><i style="width:${azPct}%;background:var(--amz)"></i></div>
+    <div class="split-legend"><span><i class="k" style="background:var(--us)"></i>US ${fmtNum(us)}</span>${m.onAmazon ? `<span><i class="k" style="background:var(--amz)"></i>Amazon ${fmtNum(az)}</span>` : `<span style="color:var(--ink-dim)">not sold on Amazon</span>`}</div></div>`;
+}
+// The reason to look at channels separately: a combined total can look fine while one side is nearly empty.
+// Only fires for SKUs sold in both places, and only when the two sides disagree — otherwise nothing is hidden.
+function channelFlagHtml(m){
+  if (!m.onAmazon) return '';
+  if (m.status==='now' || m.status==='oos' || m.status==='nodata') return ''; // already flagged at the top level
+  const amzLow = m.amzStatus==='now' || m.amzStatus==='oos', usLow = m.usStatus==='now' || m.usStatus==='oos';
+  if (amzLow === usLow) return '';
+  const d = (st, dos) => st==='oos' ? 'is out' : `has ${fmtDays(dos)} days`;
+  return `<div class="alert-action" style="color:#7A3B1C">⚑ Uneven across channels — Amazon FBA ${d(m.amzStatus, m.amzDaysOfSupply)} of stock, the US 3PL ${d(m.usStatus, m.usDaysOfSupply)}.</div>`;
+}
+function poStatusRow(m){
+  return `<div class="alert-row"><span>PO status · all channels</span><span class="badge-pill status-${m.status}">${statusLabel(m.status)}</span></div>`;
+}
+function alertCardHtml(m, scope){
+  const st = scope==='us' ? m.usStatus : scope==='amz' ? m.amzStatus : m.status;
+  const head = `<div class="ac-head"><div><div class="alert-sku">${skuName(m.sku)}</div><div class="alert-code">${m.sku}</div></div><div class="status-pill status-${st}">${scope==='all' ? statusLabel(st) : runwayLabel(st)}</div></div>`;
+  if (scope==='us') {
+    const warn = m.usStatus==='oos' ? `<div class="alert-action">The 3PL is out of stock.</div>`
+      : m.usStatus==='now' ? `<div class="alert-action">US stock lasts about <b class="mono">${fmtDays(m.usDaysOfSupply)}d</b> — shorter than the <b class="mono">${Math.round(m.leadTime)}d</b> lead time.</div>` : '';
+    return `<div class="alert-card status-${st}">${head}
+      <div class="alert-row"><span>Velocity (Shopify)</span><b>${m.shopVel.toFixed(1)}/day</b></div>
+      ${sparkBlock(m.sku, 'Daily sales')}
+      <div class="alert-row"><span>On-hand (3PL)</span><b>${fmtNum(m.usOnHandNow)}</b></div>
+      <div class="alert-row"><span>Days of supply</span><b>${fmtDays(m.usDaysOfSupply)}</b></div>
+      <div class="alert-row"><span>Lead time</span><b>${Math.round(m.leadTime)}d</b></div>
+      ${poStatusRow(m)}${warn}${inboundCoverageLine(m)}${chinaBridgeLine(m)}</div>`;
+  }
+  if (scope==='amz') {
+    const warn = m.amzStatus==='na' ? '' : (m.amzStatus==='now'||m.amzStatus==='soon'||m.amzStatus==='oos')
+      ? `<div class="alert-action">${m.amzStatus==='oos' ? 'FBA is out of stock.' : `FBA stock lasts about <b class="mono">${fmtDays(m.amzDaysOfSupply)}d</b>.`} The US 3PL currently holds <b class="mono">${fmtNum(m.usOnHandNow)}</b> units.</div>` : '';
+    return `<div class="alert-card status-${st}">${head}
+      <div class="alert-row"><span>Velocity (T30)</span><b>${m.amzVel.toFixed(1)}/day</b></div>
+      ${amzPaceHTML(m.sku)}
+      <div class="alert-row"><span>FBA on-hand</span><b>${fmtNum(m.amzOnHandNow)}</b></div>
+      <div class="alert-row"><span>FBA inbound</span><b>${fmtNum(m.amzInboundQty||0)}</b></div>
+      <div class="alert-row"><span>Days of supply</span><b>${fmtDays(m.amzDaysOfSupply)}</b></div>
+      ${poStatusRow(m)}${warn}</div>`;
+  }
+  return `<div class="alert-card status-${st}">${head}
       <div class="alert-row"><span>Velocity</span><b>${m.combinedVel.toFixed(1)}/day</b></div>
+      ${sparkBlock(m.sku, 'US daily sales')}
       <div class="alert-row"><span>On-hand</span><b>${fmtNum(m.combinedOnHand)}</b></div>
+      ${splitBar(m)}
       <div class="alert-row"><span>Days of supply</span><b>${fmtDays(m.daysOfSupply)}</b></div>
       <div class="alert-row"><span>Lead time</span><b>${Math.round(m.leadTime)}d</b></div>
-      ${m.status==='nodata' ? `<div class="alert-action" style="color:var(--ink-mid)">⚠️ Can't calculate — order-count data is missing for this SKU (needs a fresh Orders file upload, not just a resumed session or Google Sheet connection). Status shown is not a real reading.</div>` : (m.status==='now'||m.status==='oos') ? `<div class="alert-action">📦 ${m.overdueDays>0 ? `Overdue by <b class="mono">${m.overdueDays}d</b> — place PO now` : 'Place PO now'} — suggested qty <b class="mono">${m.container.toLocaleString('en-US')}</b> (1 container)</div>` : m.status==='soon' ? `<div class="alert-action">⏳ Reorder by <b class="mono">${m.reorderByDate}</b></div>` : ''}
-      ${inboundCoverageLine(m)}
-      ${chinaBridgeLine(m)}
-    </div>
-  `).join('');
-
-  document.getElementById('dashBody').innerHTML = metrics.map(m=>`
-    <tr>
-      <td><span class="sku-name">${skuName(m.sku)}</span><br><span class="sku-code">${m.sku}</span></td>
-      <td><span class="num">${m.shopVel.toFixed(1)}</span></td>
-      <td>${m.onAmazon ? `<span class="num">${m.amzVel.toFixed(1)}</span>` : `<span class="num dim">—</span>`}</td>
-      <td><span class="num big">${m.combinedVel.toFixed(1)}</span></td>
-      <td><span class="num">${fmtNum(m.combinedOnHand)}</span></td>
-      <td><span class="num ${m.status==='now'||m.status==='oos'||m.status==='nodata'?'red':m.status==='soon'?'amber':'jade'}">${fmtDays(m.daysOfSupply)}</span></td>
-      <td><span class="num dim">${Math.round(m.leadTime)}d</span></td>
-      <td>${m.overdueDays>0 ? `<span class="num red">Overdue ${m.overdueDays}d</span>` : `<span class="num dim">${m.reorderByDate}</span>`}</td>
-      <td><span class="badge-pill status-${m.status}">${statusLabel(m.status)}</span></td>
+      ${poActionHtml(m)}${channelFlagHtml(m)}${inboundCoverageLine(m)}${chinaBridgeLine(m)}</div>`;
+}
+const chSub = (u, a, onAmz) => `<span class="sub"><span class="ch-us">US</span> ${u} · <span class="ch-amz">AMZ</span> ${onAmz ? a : '—'}</span>`;
+function dashTable(scope, metrics){
+  const dosCls = st => st==='now'||st==='oos'||st==='nodata' ? 'red' : st==='soon' ? 'amber' : 'jade';
+  const pill = st => `<span class="badge-pill status-${st}">${statusLabel(st)}</span>`;
+  const runwayPill = st => `<span class="badge-pill status-${st}">${runwayLabel(st)}</span>`;
+  const inboundCell = m => m.inboundQty>0 ? `<span class="num ${m.inboundCoverage==='covered'?'jade':'red'}">${m.inboundQty.toLocaleString('en-US')}</span>${m.inboundNextArrival?`<span class="sub">by ${m.inboundNextArrival}</span>`:''}` : `<span class="num dim">—</span>`;
+  const nameCell = m => `<td><span class="sku-name">${skuName(m.sku)}</span><br><span class="sku-code">${m.sku}</span></td>`;
+  if (scope==='us') return {
+    head: '<th>SKU</th><th>Velocity / day</th><th>On-hand (3PL)</th><th>Committed</th><th>Days of supply</th><th>US runway</th><th>PO status</th><th>Inbound</th>',
+    rows: metrics.map(m=>{ const inv = D.shopify.inv[m.sku]||{committed:0}; return `<tr>${nameCell(m)}
+      <td><span class="num big">${m.shopVel.toFixed(1)}</span></td>
+      <td><span class="num">${fmtNum(m.usOnHandNow)}</span></td>
+      <td><span class="num dim">${(inv.committed||0).toLocaleString('en-US')}</span></td>
+      <td><span class="num ${dosCls(m.usStatus)}">${fmtDays(m.usDaysOfSupply)}</span><span class="sub">lead time ${Math.round(m.leadTime)}d</span></td>
+      <td>${runwayPill(m.usStatus)}</td><td>${pill(m.status)}</td><td>${inboundCell(m)}</td></tr>`; }).join('') };
+  if (scope==='amz') return {
+    head: '<th>SKU</th><th>Velocity / day (T30)</th><th>FBA on-hand</th><th>FBA inbound</th><th>Days of supply</th><th>Amazon runway</th><th>PO status</th><th>US 3PL on-hand</th>',
+    rows: metrics.map(m=>`<tr>${nameCell(m)}
+      <td><span class="num big">${m.amzVel.toFixed(1)}</span></td>
+      <td><span class="num ${m.amzOnHandNow<=0?'red':''}">${fmtNum(m.amzOnHandNow)}</span></td>
+      <td><span class="num dim">${fmtNum(m.amzInboundQty||0)}</span></td>
+      <td><span class="num ${dosCls(m.amzStatus)}">${fmtDays(m.amzDaysOfSupply)}</span></td>
+      <td>${runwayPill(m.amzStatus)}</td><td>${pill(m.status)}</td>
+      <td><span class="num dim">${fmtNum(m.usOnHandNow)}</span></td></tr>`).join('') };
+  return {
+    head: '<th>SKU</th><th>Velocity / day</th><th>On-hand</th><th>Days of supply</th><th>Reorder-by</th><th>Status</th><th>Suggested order</th><th>Inbound</th>',
+    rows: metrics.map(m=>`<tr>${nameCell(m)}
+      <td><span class="num big">${m.combinedVel.toFixed(1)}</span>${chSub(m.shopVel.toFixed(1), m.amzVel.toFixed(1), m.onAmazon)}</td>
+      <td><span class="num big">${fmtNum(m.combinedOnHand)}</span>${chSub(fmtNum(m.usOnHandNow), fmtNum(m.amzOnHandNow), m.onAmazon)}</td>
+      <td><span class="num ${dosCls(m.status)}">${fmtDays(m.daysOfSupply)}</span>${chSub(fmtDays(m.usDaysOfSupply)+'d', m.onAmazon?fmtDays(m.amzDaysOfSupply)+'d':'', m.onAmazon)}</td>
+      <td>${m.overdueDays>0 ? `<span class="num red">Overdue ${m.overdueDays}d</span>` : `<span class="num">${m.reorderByDate}</span>`}<span class="sub">lead time ${Math.round(m.leadTime)}d</span></td>
+      <td>${pill(m.status)}</td>
       <td>${m.status==='nodata' ? `<span class="num dim">no data</span>` : (m.status==='now'||m.status==='oos'||m.status==='soon') ? `<span class="num">${m.container.toLocaleString('en-US')}</span>` : `<span class="num dim">—</span>`}</td>
-      <td>${m.inboundQty>0 ? `<span class="num ${m.inboundCoverage==='covered'?'jade':'red'}">${m.inboundQty.toLocaleString('en-US')}</span>${m.inboundNextArrival?`<br><span class="num dim" style="font-size:10.5px">by ${m.inboundNextArrival}</span>`:''}` : `<span class="num dim">—</span>`}</td>
-    </tr>
-  `).join('');
+      <td>${inboundCell(m)}</td></tr>`).join('') };
+}
+function renderDashboard(){
+  const all = allSkuMetrics();
+  const scope = dashScope;
+  document.querySelectorAll('.seg [data-scope]').forEach(b=>b.classList.toggle('active', b.dataset.scope===scope));
+  const noteEl = document.getElementById('scopeNote'); if (noteEl) noteEl.textContent = SCOPE_NOTE[scope];
+  const metrics = scope==='amz' ? all.filter(m=>m.onAmazon) : all;
+  const notOnAmz = all.filter(m=>!m.onAmazon);
 
+  let kpis, alertSub, alertTitle, tableTitle, tableSub;
+  if (scope==='us') {
+    const prod = all.filter(m=>isProductSku(m.sku));
+    const vel = prod.reduce((t,m)=>t+m.shopVel,0), onh = prod.reduce((t,m)=>t+m.usOnHandNow,0);
+    const low = all.filter(m=>isLowStatus(m.usStatus)), soonest = all.filter(m=>m.shopVel>0 && isFinite(m.usDaysOfSupply)).sort((a,b)=>a.usDaysOfSupply-b.usDaysOfSupply)[0];
+    kpis = kpiCard('US sales velocity', vel.toFixed(1), 'units/day · Shopify, product SKUs', '', velSpark())
+         + kpiCard('US on-hand', fmtNum(onh), 'product units at the US 3PL')
+         + kpiCard('Short US runway', low.length, `of ${all.length} SKUs have less stock than their lead time — inbound not counted`, low.length>0?'red':'jade')
+         + kpiCard('Soonest US stockout', soonest ? skuName(soonest.sku) : '—', soonest ? `in ${fmtDays(soonest.usDaysOfSupply)} days at the 3PL` : 'no data', soonest && isLowStatus(soonest.usStatus) ? 'amber' : '');
+    alertSub = `${low.length} SKU${low.length!==1?'s':''} with less US stock than lead time (stock ÷ sales pace; inbound is shown on each card)`;
+    alertTitle = 'US · 3PL runway by SKU'; tableTitle = 'US · 3PL — SKU detail'; tableSub = 'Shopify sales pace against the stock at the US 3PL';
+  } else if (scope==='amz') {
+    const vel = metrics.reduce((t,m)=>t+m.amzVel,0), onh = metrics.reduce((t,m)=>t+m.amzOnHandNow,0);
+    const low = metrics.filter(m=>isLowStatus(m.amzStatus)), soonest = metrics.filter(m=>m.amzVel>0 && isFinite(m.amzDaysOfSupply)).sort((a,b)=>a.amzDaysOfSupply-b.amzDaysOfSupply)[0];
+    kpis = kpiCard('Amazon sales velocity', vel.toFixed(1), 'units/day · 30-day average')
+         + kpiCard('FBA on-hand', fmtNum(onh), `units across ${metrics.length} listed SKU${metrics.length!==1?'s':''}`)
+         + kpiCard('Short Amazon runway', low.length, `of ${metrics.length} SKUs have less stock than their lead time — inbound not counted`, low.length>0?'red':'jade')
+         + kpiCard('Soonest Amazon stockout', soonest ? skuName(soonest.sku) : '—', soonest ? `in ${fmtDays(soonest.amzDaysOfSupply)} days at FBA` : 'no data', soonest && isLowStatus(soonest.amzStatus) ? 'amber' : '');
+    alertSub = `${low.length} SKU${low.length!==1?'s':''} with less FBA stock than lead time (stock ÷ sales pace)`;
+    alertTitle = 'Amazon · FBA runway by SKU'; tableTitle = 'Amazon · FBA — SKU detail';
+    tableSub = notOnAmz.length ? `Not sold on Amazon: ${notOnAmz.map(m=>skuName(m.sku)).join(', ')}` : 'Amazon sales pace against FBA stock';
+  } else {
+    const prod = all.filter(m=>isProductSku(m.sku));
+    const totalVel = prod.reduce((t,m)=>t+m.combinedVel,0), totalOnHand = prod.reduce((t,m)=>t+m.combinedOnHand,0);
+    const usTot = prod.reduce((t,m)=>t+m.usOnHandNow,0), azTot = prod.reduce((t,m)=>t+m.amzOnHandNow,0);
+    const reorderNow = all.filter(m=>m.status==='now'||m.status==='oos'||m.status==='nodata').length;
+    const soonest = all.filter(m=>isFinite(m.daysOfSupply)).sort((a,b)=>a.daysOfSupply-b.daysOfSupply)[0];
+    kpis = kpiCard('Combined sales velocity', totalVel.toFixed(1), `units/day · ${PRODUCT_SKU_COUNT} product SKUs, both channels`, '', velSpark())
+         + kpiCard('Total on-hand inventory', fmtNum(totalOnHand), `<span class="ch-us">US ${fmtNum(usTot)}</span> · <span class="ch-amz">Amazon ${fmtNum(azTot)}</span>`, '', miniSplitBar([{v:usTot,color:VC.us},{v:azTot,color:VC.amz}]))
+         + kpiCard('SKUs needing reorder', reorderNow, `of ${all.length} total SKUs`, reorderNow>0?'red':'jade')
+         + kpiCard('Next reorder due', soonest ? skuName(soonest.sku) : '—', soonest ? (soonest.overdueDays>0 ? 'overdue by '+soonest.overdueDays+'d' : 'by '+soonest.reorderByDate) : 'no data', soonest && soonest.status!=='ok' ? 'amber' : '');
+    alertSub = `${reorderNow} SKU${reorderNow!==1?'s':''} need attention right now`;
+    alertTitle = 'Reorder alerts — all SKUs'; tableTitle = 'SKU overview — all channels';
+    tableSub = 'Totals first, with the US 3PL and Amazon FBA split underneath';
+  }
+  document.getElementById('kpiGrid').innerHTML = kpis;
+  document.getElementById('alertSub').textContent = alertSub;
+  document.getElementById('alertTitle').textContent = alertTitle;
+  document.getElementById('dashTableTitle').textContent = tableTitle;
+  document.getElementById('dashTableSub').textContent = tableSub;
+  document.getElementById('alertGrid').innerHTML = metrics.length ? metrics.map(m=>alertCardHtml(m, scope)).join('') : `<div class="empty-state">No SKUs to show for this channel.</div>`;
+  const t = dashTable(scope, metrics);
+  document.getElementById('dashHeadRow').innerHTML = t.head;
+  document.getElementById('dashBody').innerHTML = t.rows || `<tr><td colspan="9" class="empty-state">No SKUs to show for this channel.</td></tr>`;
+
+  renderRunwayPanel(scope, metrics);
   renderHistoryPanel();
+}
+function renderRunwayPanel(scope, metrics){
+  const items = metrics.map(m=>{
+    if (scope==='us')  return { label:skuName(m.sku), dos:m.usDaysOfSupply,  lead:m.leadTime, rp:m.reorderPointDays, status:m.usStatus };
+    if (scope==='amz') return { label:skuName(m.sku), dos:m.amzDaysOfSupply, lead:m.leadTime, rp:m.reorderPointDays, status:m.amzStatus };
+    const covered = m.inboundQty>0 && m.inboundCoverage==='covered' && m.daysOfSupply<=m.leadTime;
+    return { label:skuName(m.sku), dos:m.daysOfSupply, lead:m.leadTime, rp:m.reorderPointDays, status:m.status, note: m.status==='nodata' ? '' : covered ? 'inbound covers the gap' : '' };
+  });
+  document.getElementById('runwayTitle').textContent = scope==='us' ? 'US · 3PL runway at a glance' : scope==='amz' ? 'Amazon · FBA runway at a glance' : 'Runway at a glance';
+  document.getElementById('runwaySub').textContent = scope==='all'
+    ? 'Days of supply at current sales pace. A bar that ends before the lead-time marker needs new stock to land first.'
+    : 'Days of stock left at this channel\u2019s own sales pace (inbound not counted).';
+  const lab = scope==='all' ? ['Healthy','Reorder soon','Reorder now'] : ['Healthy','Watch','Low runway'];
+  document.getElementById('runwayLegend').innerHTML = `<span><i style="background:${VC.jade}"></i>${lab[0]}</span><span><i style="background:${VC.amber}"></i>${lab[1]}</span><span><i style="background:${VC.red}"></i>${lab[2]}</span><span><i style="background:${VC.dark}"></i>Out of stock</span>`;
+  const svg = runwayChartSVG(items);
+  document.getElementById('runwayChart').innerHTML = svg || '<div class="empty-state">No SKUs to chart for this channel.</div>';
 }
 
 function renderHistoryPanel(){
@@ -2246,28 +2723,26 @@ function renderHistoryPanel(){
 // =========================================================================
 function renderShopify(){
   const metrics = allSkuMetrics();
-  const totalUnits = Object.values(D.shopify.skuUnits).reduce((a,b)=>a+b,0);
+  const totalUnits = Object.entries(D.shopify.skuUnits).filter(([k])=>isProductSku(k)).reduce((a,[,b])=>a+b,0);
   const totalOrders = D.shopify.countedOrders;
 
   document.getElementById('b-shopify').textContent = MASTER_SKUS.length;
   document.getElementById('shopKpiGrid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Orders in period</div><div class="kpi-value">${totalOrders.toLocaleString('en-US')}</div><div class="kpi-sub">${D.shopify.dayCount} days · ${D.shopify.minDate} to ${D.shopify.maxDate}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Units sold (all tracked)</div><div class="kpi-value">${totalUnits.toLocaleString('en-US')}</div><div class="kpi-sub">${(totalUnits/D.shopify.dayCount).toFixed(1)}/day combined</div></div>
+    <div class="kpi-card"><div class="kpi-label">Units sold (product SKUs)</div><div class="kpi-value">${totalUnits.toLocaleString('en-US')}</div><div class="kpi-sub">${(totalUnits/D.shopify.dayCount).toFixed(1)}/day combined</div></div>
     <div class="kpi-card"><div class="kpi-label">Cancelled orders</div><div class="kpi-value">${D.shopify.cancelledCount.toLocaleString('en-US')}</div><div class="kpi-sub">excluded from velocity</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total on-hand</div><div class="kpi-value jade">${fmtNum(metrics.reduce((s,m)=>s+m.shopOnHand,0))}</div><div class="kpi-sub">Doral Warehouse, unreserved</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total on-hand</div><div class="kpi-value jade">${fmtNum(metrics.filter(m=>isProductSku(m.sku)).reduce((s,m)=>s+m.shopOnHand,0))}</div><div class="kpi-sub">Doral Warehouse, unreserved</div></div>
   `;
 
-  // trend chart — top 3 SKUs by volume, daily units
+  // trend chart — every product SKU stacked, so the total height is that day's units and the colors show the mix
   const dates = Object.keys(D.shopify.dailyUnits).sort();
-  const topSkus = MASTER_SKUS.map(s=>s.code).sort((a,b)=>(D.shopify.skuUnits[b]||0)-(D.shopify.skuUnits[a]||0)).slice(0,3);
-  document.getElementById('shopTrendSub').textContent = 'Top ' + topSkus.length + ' SKUs by volume: ' + topSkus.map(skuName).join(', ');
-  const maxDaily = Math.max(1, ...dates.map(d=>topSkus.reduce((s,sku)=>s+((D.shopify.dailyUnits[d]||{})[sku]||0),0)));
-  document.getElementById('shopTrendChart').innerHTML = dates.map(d=>{
-    const total = topSkus.reduce((s,sku)=>s+((D.shopify.dailyUnits[d]||{})[sku]||0),0);
-    const h = Math.max(2, Math.round(total/maxDaily*100));
-    return `<div class="trend-bar" style="height:${h}%" title="${d}: ${total} units"></div>`;
-  }).join('');
-  document.getElementById('shopTrendAxis').innerHTML = dates.length ? `<span>${dates[0]}</span><span>${dates[dates.length-1]}</span>` : '';
+  const prodSkus = MASTER_SKUS.map(sk=>sk.code).filter(isProductSku).sort((x,y)=>(D.shopify.skuUnits[y]||0)-(D.shopify.skuUnits[x]||0));
+  document.getElementById('shopTrendSub').textContent = `All ${prodSkus.length} product SKUs stacked — the total height is units sold that day (Thank You Cards are orders, so they are left out)`;
+  const trendEl = document.getElementById('shopTrendChart'), legendEl = document.getElementById('shopTrendAxis');
+  trendEl.className = ''; trendEl.style.cssText = ''; legendEl.className = 'legend'; legendEl.style.cssText = 'padding-top:6px';
+  const chartSeries = prodSkus.map((code,i)=>({ name:skuName(code), color:SKU_COLORS[i%SKU_COLORS.length], values:dates.map(d=>((D.shopify.dailyUnits[d]||{})[code])||0) }));
+  trendEl.innerHTML = stackedAreaSVG(dates, chartSeries) || '<div class="empty-state">Not enough daily data to chart yet.</div>';
+  legendEl.innerHTML = chartSeries.map(se=>`<span><i style="background:${se.color}"></i>${svgEsc(se.name)}</span>`).join('');
 
   document.getElementById('shopBody').innerHTML = metrics.map(m=>{
     const orders = (D.shopify.skuOrders[m.sku]||new Set()).size;
@@ -2276,7 +2751,7 @@ function renderShopify(){
     const shopDaysOfSupply = m.shopVel>0 ? inv.unreserved/m.shopVel : (inv.unreserved>0?Infinity:0);
     return `<tr>
       <td><span class="sku-name">${skuName(m.sku)}</span><br><span class="sku-code">${m.sku}</span></td>
-      <td><span class="num big">${units.toLocaleString('en-US')}</span></td>
+      <td><span class="num big">${units.toLocaleString('en-US')}</span>${ORDER_BASED_SKUS.has(m.sku)?'<span class="sub">orders</span>':''}</td>
       <td><span class="num">${orders.toLocaleString('en-US')}</span></td>
       <td><span class="num">${m.shopVel.toFixed(1)}</span></td>
       <td><span class="num">${inv.unreserved.toLocaleString('en-US')}</span></td>
@@ -2375,12 +2850,13 @@ function generateDailyReport(){
   const rows = MASTER_SKUS.map(s=>{
     const units = dayData[s.code]||0;
     const m = metrics.find(mm=>mm.sku===s.code);
-    return { sku:s.code, name:s.name, units, onHand:m.combinedOnHand, daysOfSupply:m.daysOfSupply, status:m.status };
+    return { sku:s.code, name:s.name, units, onHand:m.combinedOnHand, daysOfSupply:m.daysOfSupply, status:m.status, usOnHand:m.usOnHandNow, amzOnHand:m.amzOnHandNow, onAmazon:m.onAmazon, orderBased:ORDER_BASED_SKUS.has(s.code) };
   });
-  const totalUnits = rows.reduce((s,r)=>s+r.units,0);
+  const totalUnits = rows.filter(r=>isProductSku(r.sku)).reduce((s,r)=>s+r.units,0);
+  const cardOrders = rows.filter(r=>!isProductSku(r.sku)).reduce((s,r)=>s+r.units,0);
   const reorderCount = metrics.filter(m=>m.status==='now'||m.status==='oos'||m.status==='nodata').length;
-  const narrative = `On ${date}, Quasi sold ${totalUnits.toLocaleString('en-US')} units across the ${MASTER_SKUS.length} tracked SKUs (Shopify order data — Amazon uses its own 30-day velocity, not shown here by day). ${reorderCount>0 ? `${reorderCount} SKU${reorderCount!==1?'s':''} currently need${reorderCount===1?'s':''} reordering — see the Inventory Health report for details.` : 'No SKUs are in immediate reorder territory.'}`;
-  return { title:`Daily Report — ${date}`, narrative, rows, date, totalUnits, reorderCount };
+  const narrative = `On ${date}, Quasi sold ${totalUnits.toLocaleString('en-US')} units across the ${PRODUCT_SKU_COUNT} product SKUs${cardOrders>0 ? ` from ${cardOrders.toLocaleString('en-US')} orders` : ''} (Shopify order data — Amazon uses its own 30-day velocity, not shown here by day). ${reorderCount>0 ? `${reorderCount} SKU${reorderCount!==1?'s':''} currently need${reorderCount===1?'s':''} reordering — see the Inventory Health report for details.` : 'No SKUs are in immediate reorder territory.'}`;
+  return { title:`Daily Report — ${date}`, narrative, rows, date, totalUnits, reorderCount, cardOrders };
 }
 function generateWeeklyReport(){
   const metrics = allSkuMetrics();
@@ -2392,11 +2868,11 @@ function generateWeeklyReport(){
     const m = metrics.find(mm=>mm.sku===s.code);
     const overallAvg = m.shopVel;
     const pctDiff = overallAvg>0 ? ((weekAvg-overallAvg)/overallAvg*100) : 0;
-    return { sku:s.code, name:s.name, weekUnits, weekAvg, overallAvg, pctDiff, status:m.status };
+    return { sku:s.code, name:s.name, weekUnits, weekAvg, overallAvg, pctDiff, status:m.status, orderBased:ORDER_BASED_SKUS.has(s.code) };
   });
-  const totalWeek = rows.reduce((s,r)=>s+r.weekUnits,0);
+  const totalWeek = rows.filter(r=>isProductSku(r.sku)).reduce((s,r)=>s+r.weekUnits,0);
   const narrative = last7.length
-    ? `Over the ${last7.length} day${last7.length!==1?'s':''} ending ${last7[last7.length-1]}, Quasi sold ${totalWeek.toLocaleString('en-US')} units across the ${MASTER_SKUS.length} tracked SKUs on Shopify. Compare each SKU's weekly pace to its full-period average below to spot SKUs speeding up or slowing down.`
+    ? `Over the ${last7.length} day${last7.length!==1?'s':''} ending ${last7[last7.length-1]}, Quasi sold ${totalWeek.toLocaleString('en-US')} units across the ${PRODUCT_SKU_COUNT} product SKUs on Shopify. Compare each SKU's weekly pace to its full-period average below to spot SKUs speeding up or slowing down.`
     : `Not enough daily data to build a weekly view yet.`;
   return { title:`Weekly Report — week ending ${last7[last7.length-1]||'—'}`, narrative, rows, last7, totalWeek };
 }
@@ -2431,11 +2907,11 @@ function renderDailyReportHTML(){
     <div class="report-stat-row">
       <div class="report-stat"><div class="report-stat-label">Units sold — ${r.date}</div><div class="report-stat-value">${r.totalUnits.toLocaleString('en-US')}</div></div>
       <div class="report-stat"><div class="report-stat-label">SKUs needing reorder</div><div class="report-stat-value" style="color:${r.reorderCount>0?'var(--red)':'var(--jade)'}">${r.reorderCount}</div></div>
-      <div class="report-stat"><div class="report-stat-label">Total on-hand</div><div class="report-stat-value">${fmtNum(metrics.reduce((s,m)=>s+m.combinedOnHand,0))}</div></div>
+      <div class="report-stat"><div class="report-stat-label">Total on-hand</div><div class="report-stat-value">${fmtNum(metrics.filter(m=>isProductSku(m.sku)).reduce((s,m)=>s+m.combinedOnHand,0))}</div></div>
     </div>
     <div class="report-section-title">Sales by SKU — ${r.date}</div>
     <table><thead><tr><th>SKU</th><th>Units sold</th><th>On-hand</th><th>Days of supply</th><th>Status</th></tr></thead><tbody>
-      ${r.rows.map(row=>`<tr><td><span class="sku-name">${row.name}</span></td><td><span class="num big">${row.units.toLocaleString('en-US')}</span></td><td><span class="num">${fmtNum(row.onHand)}</span></td><td><span class="num">${fmtDays(row.daysOfSupply)}</span></td><td><span class="badge-pill status-${row.status}">${statusLabel(row.status)}</span></td></tr>`).join('')}
+      ${r.rows.map(row=>`<tr><td><span class="sku-name">${row.name}</span></td><td><span class="num big">${row.units.toLocaleString('en-US')}</span>${row.orderBased?'<span class="sub">orders</span>':''}</td><td><span class="num">${fmtNum(row.onHand)}</span>${row.onAmazon?`<span class="sub">US ${fmtNum(row.usOnHand)} · AMZ ${fmtNum(row.amzOnHand)}</span>`:''}</td><td><span class="num">${fmtDays(row.daysOfSupply)}</span></td><td><span class="badge-pill status-${row.status}">${statusLabel(row.status)}</span></td></tr>`).join('')}
     </tbody></table>
     <div class="report-footer">${reportGeneratedFooter()}</div>`;
 }
@@ -2451,7 +2927,7 @@ function renderWeeklyReportHTML(){
     <table><thead><tr><th>SKU</th><th>Units (week)</th><th>Avg/day (week)</th><th>Avg/day (period)</th><th>vs period avg</th><th>Status</th></tr></thead><tbody>
     ${r.rows.map(row=>{
       const arrow = row.pctDiff>5 ? '<span class="trend-arrow up">▲</span>' : row.pctDiff<-5 ? '<span class="trend-arrow down">▼</span>' : '<span class="trend-arrow flat">—</span>';
-      return `<tr><td><span class="sku-name">${row.name}</span></td><td><span class="num">${row.weekUnits.toLocaleString('en-US')}</span></td><td><span class="num">${row.weekAvg.toFixed(1)}</span></td><td><span class="num dim">${row.overallAvg.toFixed(1)}</span></td><td>${arrow} <span class="num">${row.pctDiff>=0?'+':''}${row.pctDiff.toFixed(0)}%</span></td><td><span class="badge-pill status-${row.status}">${statusLabel(row.status)}</span></td></tr>`;
+      return `<tr><td><span class="sku-name">${row.name}</span></td><td><span class="num">${row.weekUnits.toLocaleString('en-US')}</span>${row.orderBased?'<span class="sub">orders</span>':''}</td><td><span class="num">${row.weekAvg.toFixed(1)}</span></td><td><span class="num dim">${row.overallAvg.toFixed(1)}</span></td><td>${arrow} <span class="num">${row.pctDiff>=0?'+':''}${row.pctDiff.toFixed(0)}%</span></td><td><span class="badge-pill status-${row.status}">${statusLabel(row.status)}</span></td></tr>`;
     }).join('')}
     </tbody></table>
     <div class="report-footer">${reportGeneratedFooter()}</div>`;
@@ -2464,14 +2940,14 @@ function renderHealthReportHTML(){
       <div class="report-stat"><div class="report-stat-label">Reorder now</div><div class="report-stat-value" style="color:var(--red)">${r.now.length}</div></div>
       <div class="report-stat"><div class="report-stat-label">Reorder soon</div><div class="report-stat-value" style="color:var(--amber)">${r.soon.length}</div></div>
       <div class="report-stat"><div class="report-stat-label">Healthy</div><div class="report-stat-value" style="color:var(--jade)">${r.ok.length}</div></div>
-      <div class="report-stat"><div class="report-stat-label">Combined velocity</div><div class="report-stat-value">${r.metrics.reduce((s,m)=>s+m.combinedVel,0).toFixed(1)}/day</div></div>
+      <div class="report-stat"><div class="report-stat-label">Combined velocity</div><div class="report-stat-value">${r.metrics.filter(m=>isProductSku(m.sku)).reduce((s,m)=>s+m.combinedVel,0).toFixed(1)}/day</div></div>
     </div>
     <div class="report-section-title">Full SKU status</div>
     <table><thead><tr><th>SKU</th><th>Status</th><th>On-hand</th><th>Days of supply</th><th>Lead time</th><th>Reorder-by</th><th>Suggested order</th><th>Inbound</th></tr></thead><tbody>
     ${r.metrics.map(m=>`<tr>
       <td><span class="sku-name">${skuName(m.sku)}</span></td>
       <td><span class="badge-pill status-${m.status}">${statusLabel(m.status)}</span></td>
-      <td><span class="num">${fmtNum(m.combinedOnHand)}</span></td>
+      <td><span class="num">${fmtNum(m.combinedOnHand)}</span>${m.onAmazon?`<span class="sub">US ${fmtNum(m.usOnHandNow)} · AMZ ${fmtNum(m.amzOnHandNow)}</span>`:''}</td>
       <td><span class="num">${fmtDays(m.daysOfSupply)}</span></td>
       <td><span class="num dim">${Math.round(m.leadTime)}d</span></td>
       <td>${m.overdueDays>0?`<span class="num red">Overdue ${m.overdueDays}d</span>`:`<span class="num dim">${m.reorderByDate}</span>`}</td>
@@ -2514,13 +2990,13 @@ function buildReportText(){
   if (currentReportType==='daily'){
     const r = generateDailyReport();
     let t = `QUASI — DAILY REPORT (${r.date})\n\n${r.narrative}\n\n`;
-    r.rows.forEach(row=> t+= `${row.name}: ${row.units.toLocaleString('en-US')} units sold · ${fmtNum(row.onHand)} on hand · ${fmtDays(row.daysOfSupply)}d supply · ${statusLabel(row.status)}\n`);
+    r.rows.forEach(row=> t+= `${row.name}: ${row.units.toLocaleString('en-US')} ${row.orderBased?'orders':'units sold'} · ${fmtNum(row.onHand)} on hand · ${fmtDays(row.daysOfSupply)}d supply · ${statusLabel(row.status)}\n`);
     return t;
   }
   if (currentReportType==='weekly'){
     const r = generateWeeklyReport();
     let t = `QUASI — WEEKLY REPORT (week ending ${r.last7[r.last7.length-1]||'—'})\n\n${r.narrative}\n\n`;
-    r.rows.forEach(row=> t+= `${row.name}: ${row.weekUnits.toLocaleString('en-US')} units this week (${row.weekAvg.toFixed(1)}/day, ${row.pctDiff>=0?'+':''}${row.pctDiff.toFixed(0)}% vs period avg) · ${statusLabel(row.status)}\n`);
+    r.rows.forEach(row=> t+= `${row.name}: ${row.weekUnits.toLocaleString('en-US')} ${row.orderBased?'orders':'units'} this week (${row.weekAvg.toFixed(1)}/day, ${row.pctDiff>=0?'+':''}${row.pctDiff.toFixed(0)}% vs period avg) · ${statusLabel(row.status)}\n`);
     return t;
   }
   if (currentReportType==='health'){
@@ -2590,6 +3066,7 @@ function daysUntil(dateStr){
 function renderInbounds(){
   const badge = document.getElementById('b-inbounds');
   if (badge) badge.textContent = INBOUNDS.filter(r=>r.status==='in transit').length || '';
+  { const pc = document.getElementById('pipelineChart'); if (pc) pc.innerHTML = pipelineSVG(INBOUNDS, todayISO()) || '<div class="empty-state">Add a shipment with an order date and due date to see it on the timeline.</div>'; }
 
   // KPIs
   const inTransit = INBOUNDS.filter(r=>r.status==='in transit');
@@ -2941,12 +3418,15 @@ function renderForecasting(){
   // Supply chain breakdown
   const hasChina = metrics.some(m=>m.chinaStock>0);
   document.getElementById('supplyChainEmpty').style.display = hasChina ? 'none' : 'block';
+  document.getElementById('supplyChainLegend').innerHTML = `<span><i style="background:${VC.us}"></i>US 3PL</span><span><i style="background:${VC.amz}"></i>Amazon FBA</span><span><i style="background:${VC.china}"></i>China buffer</span>`;
   document.getElementById('supplyChainBody').innerHTML = metrics.map(m=>`
     <tr>
       <td><span class="sku-name">${skuName(m.sku)}</span></td>
-      <td><span class="num">${fmtNum(m.combinedOnHand)}</span></td>
+      <td><span class="num">${fmtNum(m.usOnHandNow)}</span></td>
+      <td>${m.onAmazon ? `<span class="num">${fmtNum(m.amzOnHandNow)}</span>` : `<span class="num dim">—</span>`}</td>
       <td><span class="num ${m.chinaStock>0?'':'dim'}">${m.chinaStock>0?fmtNum(m.chinaStock):'—'}</span></td>
       <td><span class="num big">${fmtNum(m.combinedOnHand+m.chinaStock)}</span></td>
+      <td>${mixBarHTML(m.usOnHandNow, m.onAmazon?m.amzOnHandNow:0, m.chinaStock||0)}</td>
       <td><span class="num">${fmtDays(m.daysOfSupply)}</span></td>
       <td><span class="num ${m.chinaStock>0?'jade':'dim'}">${m.chinaStock>0?fmtDays(m.daysOfSupplyWithChina):'—'}</span></td>
       <td>${m.chinaBridge==='none' ? `<span class="num dim">—</span>` : `<span class="badge-pill status-${m.chinaBridge==='covered'?'ok':'soon'}">${m.chinaBridge==='covered'?'Covered':'Too slow'}</span>`}</td>
@@ -3032,8 +3512,8 @@ function exportForecastCSV(){
 }
 function exportSupplyChainCSV(){
   const metrics = allSkuMetrics();
-  downloadCSV('quasi-supply-chain-breakdown.csv', ['SKU','Name','US+Amazon On-Hand','China Buffer','Total Available','Days of Supply','Days of Supply incl. China','China Bridge'],
-    metrics.map(m=>[m.sku, skuName(m.sku), Math.round(m.combinedOnHand), Math.round(m.chinaStock), Math.round(m.combinedOnHand+m.chinaStock), isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', isFinite(m.daysOfSupplyWithChina)?Math.round(m.daysOfSupplyWithChina):'∞', m.chinaBridge]));
+  downloadCSV('quasi-supply-chain-breakdown.csv', ['SKU','Name','US+Amazon On-Hand','China Buffer','Total Available','Days of Supply','Days of Supply incl. China','China Bridge','US On-Hand','Amazon On-Hand'],
+    metrics.map(m=>[m.sku, skuName(m.sku), Math.round(m.combinedOnHand), Math.round(m.chinaStock), Math.round(m.combinedOnHand+m.chinaStock), isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', isFinite(m.daysOfSupplyWithChina)?Math.round(m.daysOfSupplyWithChina):'∞', m.chinaBridge, Math.round(m.usOnHandNow), m.onAmazon?Math.round(m.amzOnHandNow):'']));
 }
 
 // =========================================================================
@@ -3204,8 +3684,8 @@ function downloadCSV(filename, headers, rows){
 function exportDashCSV(){
   const metrics = allSkuMetrics();
   downloadCSV(`quasi-dashboard-summary-${D.asOf}.csv`,
-    ['SKU','Name','Shopify Vel/Day','Amazon Vel/Day','Combined Vel/Day','On-Hand Combined','Days of Supply','Lead Time (days)','Reorder-By Date','Status','Suggested Order Qty','Inbound Qty','Inbound Next Arrival','Inbound Coverage'],
-    metrics.map(m=>[m.sku, skuName(m.sku), m.shopVel.toFixed(2), m.amzVel.toFixed(2), m.combinedVel.toFixed(2), Math.round(m.combinedOnHand), isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', Math.round(m.leadTime), m.reorderByDate, statusLabel(m.status), m.container, m.inboundQty, m.inboundNextArrival||'', m.inboundQty>0?m.inboundCoverage:'n/a'])
+    ['SKU','Name','Shopify Vel/Day','Amazon Vel/Day','Combined Vel/Day','On-Hand Combined','Days of Supply','Lead Time (days)','Reorder-By Date','Status','Suggested Order Qty','Inbound Qty','Inbound Next Arrival','Inbound Coverage','US On-Hand','Amazon On-Hand','US Days of Supply','Amazon Days of Supply'],
+    metrics.map(m=>[m.sku, skuName(m.sku), m.shopVel.toFixed(2), m.amzVel.toFixed(2), m.combinedVel.toFixed(2), Math.round(m.combinedOnHand), isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', Math.round(m.leadTime), m.reorderByDate, statusLabel(m.status), m.container, m.inboundQty, m.inboundNextArrival||'', m.inboundQty>0?m.inboundCoverage:'n/a', Math.round(m.usOnHandNow), m.onAmazon?Math.round(m.amzOnHandNow):'', isFinite(m.usDaysOfSupply)?Math.round(m.usDaysOfSupply):'∞', m.onAmazon?(isFinite(m.amzDaysOfSupply)?Math.round(m.amzDaysOfSupply):'∞'):''])
   );
 }
 function exportShopCSV(){
@@ -3237,11 +3717,40 @@ function exportAmzCSV(){
 // =========================================================================
 // TABS + RELOAD
 // =========================================================================
+const TAB_META = {
+  dashboard:{ title:'Dashboard',        sub:'Where every SKU stands right now — and what needs ordering' },
+  shopify:  { title:'US · Shopify',     sub:'Sales pace and stock at the US 3PL' },
+  amazon:   { title:'Amazon · FBA',     sub:'Amazon sales pace and FBA stock' },
+  reports:  { title:'Reports',          sub:'Daily, weekly and inventory-health summaries to share' },
+  inbounds: { title:'Inbounds & POs',   sub:'Shipments in the pipeline, payments, and what is still owed' },
+  forecast: { title:'Forecasting',      sub:'What to order and when — projected stock, timeline and spend' },
+  settings: { title:'Settings',         sub:'Lead times, data connections and planning assumptions' },
+};
 function showTab(name){
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  document.getElementById('sec-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.section').forEach(sec=>sec.classList.toggle('active', sec.id==='sec-'+name));
+  const meta = TAB_META[name];
+  if (meta) { const h=document.getElementById('pageTitle'), p=document.getElementById('pageSub'); if (h) h.textContent=meta.title; if (p) p.textContent=meta.sub; }
+  toggleSidebar(false);
+  try { window.scrollTo(0,0); } catch(e){}
+}
+function toggleSidebar(force){
+  const sb=document.getElementById('sidebar'), ov=document.getElementById('sbOverlay');
+  if (!sb) return;
+  const open = (typeof force==='boolean') ? force : !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  if (ov) ov.classList.toggle('open', open);
+}
+function showSettingsPane(name){
+  document.querySelectorAll('.settings-pane').forEach(pn=>pn.classList.toggle('active', pn.dataset.pane===name));
+  document.querySelectorAll('.settings-nav .sn-item').forEach(b=>b.classList.toggle('active', b.dataset.pane===name));
+  try { localStorage.setItem('quasi_settings_pane', name); } catch(e){}
+}
+function initShell(){
+  // panes are only hidden once JS is confirmed running, so Settings can never end up blank
+  const sec=document.getElementById('sec-settings'); if (sec) sec.classList.add('js-panes');
+  let pane='lead'; try { pane = localStorage.getItem('quasi_settings_pane') || 'lead'; } catch(e){}
+  showSettingsPane(['lead','season','data','amazon','freeze','handling'].includes(pane) ? pane : 'lead');
 }
 function reloadDashboard(){
   document.getElementById('app').style.display='none';
@@ -3264,6 +3773,7 @@ buildSettingsUI();
 checkResumeCard();
 renderInbounds();
 renderForecasting();
+initShell();
 autoReconnectGSheet();
 </script>
 </body>
