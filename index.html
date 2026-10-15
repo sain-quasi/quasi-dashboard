@@ -1337,6 +1337,8 @@ function onOpsDataLoaded({ daily, china, safety, warnings }){
   persistOpsData();
   const dates = Object.keys(daily).sort();
   let msg = `✓ Connected — ${dates.length} days of sales (${dates[0]} to ${dates[dates.length-1]}).`;
+  if (D && D.shopify && D.shopify.maxDate && dates.length && D.shopify.maxDate > dates[dates.length-1] && !D.shopify.gsheetConnected)
+    msg += `<br>⚠️ Your uploaded orders run to ${D.shopify.maxDate} but the sheet's sales stop at ${dates[dates.length-1]} — the sheet replaces uploaded sales, so the newest days will be missing until the sheet is updated.`;
   if (china) msg += `<br>✓ China/US/Amazon stock loaded for ${Object.keys(china).length} SKUs.`;
   if (safety) msg += `<br>✓ Real safety-stock days loaded for ${Object.keys(safety).length} SKUs — see Settings.`;
   if (warnings && warnings.length) msg += warnings.map(w=>`<br>⚠️ ${w}`).join('');
@@ -1649,10 +1651,31 @@ function shippingBalanceFor(r){
   return { amount: r.shippingCost||0, estimated: false }; // Pending or unset — assume nothing paid yet
 }
 let INBOUNDS = loadInbounds();
+// Two rows are the same shipment when SKU, qty, order date and ETA match AND their PO numbers don't
+// contradict each other (equal, or one is blank). Distinct POs are never merged.
+function inboundKey(r){ return [r.sku, r.qty, r.orderDate, r.estDelivery].join('|'); }
+function samePO(a,b){ return !a.poNumber || !b.poNumber || a.poNumber===b.poNumber; }
+const INBOUND_STATUS_RANK = { planned:0, 'in transit':1, delayed:1, received:2 };
+// Fill the kept row from the other one: take any field the kept row lacks; keep the further-along status.
+function mergeInboundInto(keep, other){
+  ['poNumber','paymentStatus','shippingPaymentStatus','productionComplete','receiveDate','notes'].forEach(f=>{ if (!keep[f] && other[f]) keep[f]=other[f]; });
+  ['depositPaid','shippingCost'].forEach(f=>{ if (!keep[f] && other[f]) keep[f]=other[f]; });
+  if ((INBOUND_STATUS_RANK[other.status]||0) > (INBOUND_STATUS_RANK[keep.status]||0)) keep.status = other.status;
+  return keep;
+}
+function dedupeInbounds(rows){
+  const out = [];
+  rows.forEach(r=>{
+    const k = inboundKey(r);
+    const hit = out.find(o=>inboundKey(o)===k && samePO(o,r));
+    if (hit) mergeInboundInto(hit, r); else out.push(r);
+  });
+  return out;
+}
 function loadInbounds(){
   try {
     const raw = localStorage.getItem('quasi_dashboard_inbounds_v1');
-    if (raw) return JSON.parse(raw).map(normalizeInboundRow);
+    if (raw) return dedupeInbounds(JSON.parse(raw).map(normalizeInboundRow));
   } catch(e){ console.warn('inbounds load failed', e); }
   // first run — seed with the team's existing tracker, give each row a stable id
   return INBOUND_SEED.map((r,i)=>normalizeInboundRow({ id:'seed-'+i, ...r }));
@@ -1698,7 +1721,7 @@ function importInboundsCSV(e){
   reader.onload = ev => {
     try {
       const rows = parseDelimited(ev.target.result);
-      let added = 0, skipped = 0;
+      let added = 0, skipped = 0, merged = 0;
       rows.forEach(r=>{
         const skuRaw = r['SKU']||r['Sku']||r['sku']||r['Product']||r['Product / SKU']||'';
         const master = aliasToMasterSKU(skuRaw);
@@ -1708,7 +1731,7 @@ function importInboundsCSV(e){
         const estDelivery = normalizeDate(r['Est Delivery Date']||r['Estimated Delivery Date']||r['estimated delivery date']||r['Est. Arrival Date']||'');
         const statusRaw = (r['Status']||'').toLowerCase().trim();
         const status = ['received','in transit','delayed','planned'].includes(statusRaw) ? statusRaw : (estDelivery && estDelivery < todayISO() ? 'received' : 'planned');
-        INBOUNDS.push(normalizeInboundRow({
+        const nr = normalizeInboundRow({
           id:'imp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), sku:master, qty, orderDate, estDelivery, status,
           poNumber: r['PO Number']||r['PO#']||r['PO']||'',
           unitCost: parseFloat(r['Unit Cost']||r['Unit Cost (USD)']||'')||undefined,
@@ -1719,13 +1742,16 @@ function importInboundsCSV(e){
           productionComplete: normalizeDate(r['Complete Date']||r['Production Complete Date']||''),
           receiveDate: normalizeDate(r['Receive Date']||''),
           notes: r['Notes']||'',
-        }));
+        });
+        const dup = INBOUNDS.find(o=>inboundKey(o)===inboundKey(nr) && samePO(o,nr));
+        if (dup) { mergeInboundInto(dup, nr); if (nr.poNumber) dup.poNumber = dup.poNumber || nr.poNumber; merged++; return; }
+        INBOUNDS.push(nr);
         added++;
       });
       persistInbounds();
       renderInbounds();
       if (D) renderAll();
-      alert(`Imported ${added} shipment${added!==1?'s':''}.${skipped?` Skipped ${skipped} row(s) with an unrecognized SKU.`:''}`);
+      alert(`Imported ${added} new shipment${added!==1?'s':''}.${merged?` ${merged} already existed (matched by SKU, qty and dates) and were not duplicated.`:''}${skipped?` Skipped ${skipped} row(s) with an unrecognized SKU.`:''}`);
     } catch(err){ alert('Could not read that CSV: '+err.message); }
   };
   reader.readAsText(file);
@@ -1759,8 +1785,12 @@ function overdueTrackedQty(sku){
   // are still marked in transit/delayed rather than received. Folded into on-hand (see computeBaseMetrics)
   // so every downstream number (days of supply, status, inbound coverage) treats them consistently
   // as "likely already here" instead of vanishing from the math entirely.
+  // Only rows that were due AFTER the inventory snapshot's as-of date: anything due on/before the
+  // snapshot is either already inside the warehouse count (adding it double-counts, which is how the
+  // dashboard ended up exactly one container above the 3PL) or genuinely late (and then not on-hand).
   const today = todayISO();
-  return INBOUNDS.filter(r=>r.sku===sku && (r.status==='in transit' || r.status==='delayed') && r.estDelivery < today)
+  const asOf = (D && D.asOf) ? D.asOf : '';
+  return INBOUNDS.filter(r=>r.sku===sku && (r.status==='in transit' || r.status==='delayed') && r.estDelivery < today && r.estDelivery > asOf)
     .reduce((s,r)=>s+r.qty, 0);
 }
 function receivedNotYetReflectedQty(sku){
@@ -1771,7 +1801,7 @@ function receivedNotYetReflectedQty(sku){
   // added here as a stand-in. Once you upload fresher inventory data dated past the receive date, this
   // stops applying on its own — the fresh upload's on-hand should already include it, avoiding double-count.
   if (!D || !D.asOf) return 0;
-  return INBOUNDS.filter(r=>r.sku===sku && r.status==='received' && (!r.receiveDate || r.receiveDate > D.asOf))
+  return INBOUNDS.filter(r=>r.sku===sku && r.status==='received' && (r.receiveDate || r.estDelivery || '') > D.asOf)
     .reduce((s,r)=>s+r.qty, 0);
 }
 function computeInboundForSKU(sku){
@@ -1945,9 +1975,12 @@ async function processFiles(){
 
     // ---- Shopify inventory ----
     const shopInv = {}; // sku -> {onHand, committed, unreserved}
+    const seenInvLoc = new Set(); // a repeated "Inventory Location ID" is the same stock line exported twice
     shopInvRaw.forEach(row=>{
       const sku=row['SKU'];
       if (!sku) return;
+      const locId = row['Inventory Location ID'];
+      if (locId) { if (seenInvLoc.has(locId)) return; seenInvLoc.add(locId); }
       const isMaster = MASTER_SKUS.some(s=>s.code===sku);
       if (!isMaster) return;
       if (!shopInv[sku]) shopInv[sku]={onHand:0,committed:0,unreserved:0};
