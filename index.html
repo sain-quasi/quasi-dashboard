@@ -138,6 +138,8 @@ body{
 .alert-card.status-oos::before{background:#7A1F1F}
 .alert-card.status-nodata::before{background:#9A90A4}
 .alert-card.status-na::before{background:var(--line2)}
+.alert-card.status-disc::before{background:#8F8A99}
+.alert-card.status-insuf::before{background:#B7A9C6}
 .ac-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
 .ac-head > div:first-child{min-width:0;margin-right:10px}
 .ac-head .status-pill{flex:0 0 auto}
@@ -169,6 +171,8 @@ body{
 .status-pill.status-oos,.badge-pill.status-oos{background:#7A1F1F;color:#fff}
 .status-pill.status-nodata,.badge-pill.status-nodata{background:#E4E1E8;color:#4A4152}
 .status-pill.status-na,.badge-pill.status-na{background:#F0ECEE;color:#9A8C94}
+.status-pill.status-disc,.badge-pill.status-disc{background:#ECE9F1;color:#5B5368}
+.status-pill.status-insuf,.badge-pill.status-insuf{background:#F3ECF8;color:#7A5C99}
 
 /* ---- TABLES ---- */
 table{width:100%;border-collapse:collapse}
@@ -587,8 +591,8 @@ tbody tr:hover td{background:#FDF9F7}
         <button class="btn btn-outline" onclick="exportAmzCSV()">Export CSV</button>
       </div>
       <div style="overflow-x:auto"><table><thead><tr>
-        <th>SKU</th><th>Available</th><th>Inbound</th><th>Units shipped T7</th><th>Units shipped T30</th>
-        <th>Vel/day (T30)</th><th>Amazon days of supply</th><th>Weeks of cover (T30)</th><th>Amazon action</th><th>Status</th>
+        <th>SKU (matched by ASIN)</th><th>Available</th><th>FC transfer</th><th>Reserved</th><th>Inbound to FBA</th><th>Unfulfillable</th><th>Amazon quantity</th><th>Units shipped T7</th><th>Units shipped T30</th>
+        <th>Vel/day (T30)</th><th>Amazon days of supply</th><th>Amazon says</th><th>Ship in by</th><th>Status</th>
       </tr></thead><tbody id="amzBody"></tbody></table></div>
     </div>
     <div class="panel" id="fbmPanel" style="display:none">
@@ -603,7 +607,7 @@ tbody tr:hover td{background:#FDF9F7}
       </tr></thead><tbody id="fbmBody"></tbody></table></div>
     </div>
     <div class="panel" id="notOnAmazonPanel">
-      <div class="panel-header"><div class="panel-title">Not sold on Amazon</div></div>
+      <div class="panel-header"><div class="panel-title">Amazon listing status by SKU</div></div>
       <div style="padding:14px 20px;font-size:13px;color:var(--ink-mid)" id="notOnAmazonList"></div>
     </div>
   </div>
@@ -662,7 +666,7 @@ tbody tr:hover td{background:#FDF9F7}
         <div class="section-tab" id="ib-tab-received" onclick="setInboundFilter('received')">Received</div>
       </div>
       <div style="overflow-x:auto"><table><thead><tr>
-        <th></th><th>SKU</th><th>PO #</th><th>Qty</th><th>Order date</th><th>Est. delivery</th><th>Status</th><th>Days until arrival</th><th>Total cost</th><th></th>
+        <th></th><th>SKU</th><th>PO #</th><th>Container #</th><th>Qty</th><th>Order date</th><th>ETA (est. arrival)</th><th>Actual receive date</th><th>Status</th><th>Days until arrival</th><th>Total cost</th><th></th>
       </tr></thead><tbody id="inboundBody"></tbody></table></div>
       <div class="empty-state" id="inboundEmpty" style="display:none">No inbound shipments yet. Click "+ Add shipment" or import a CSV to get started.</div>
     </div>
@@ -715,7 +719,7 @@ tbody tr:hover td{background:#FDF9F7}
       <div style="overflow-x:auto"><table><thead><tr>
         <th>SKU</th><th>30-day avg/day</th><th>90-day avg/day</th><th>Momentum</th><th>Trend</th>
       </tr></thead><tbody id="momentumBody"></tbody></table></div>
-      <div class="empty-state" id="momentumEmpty" style="display:none">Not enough daily sales history yet (need at least 14 days) — connect the long Daily Sales history in Settings for this to populate.</div>
+      <div class="empty-state" id="momentumEmpty" style="display:none">Not enough daily sales history yet (need at least 14 days of uploaded orders) for this to populate.</div>
     </div>
 
     <div class="panel">
@@ -790,30 +794,33 @@ tbody tr:hover td{background:#FDF9F7}
     <div class="panel settings-pane" data-pane="lead">
       <div class="panel-header">
         <div><div class="panel-title">Lead time &amp; reorder settings — per SKU</div>
-        <div class="panel-sub">Packaging + production + shipping = total lead time. Reorder point = lead time + safety stock buffer.</div></div>
+        <div class="panel-sub">Packaging + production + shipping = total lead time. Reorder-by = projected stockout date − lead time. Safety stock is an explicit buffer per SKU.</div></div>
       </div>
       <div id="skuSettingsList"></div>
+      <div id="addSkuBox"></div>
+      <div id="leadHistoryBox"></div>
     </div>
 
     <div class="panel settings-pane" data-pane="season">
       <div class="panel-header">
         <div><div class="panel-title">Seasonality multiplier</div>
-        <div class="panel-sub">Global monthly multiplier applied to forecasted demand during the lead-time window. Defaults to 1.0x (no adjustment) — update once the team confirms patterns.</div></div>
+        <div class="panel-sub">Monthly multiplier on the current run rate. It is applied to every projected date — days of supply, projected stockout, reorder-by, suggested order and the forecast calendar — so the tool plans against the same demand you do. 1.0 = flat demand.</div></div>
       </div>
+      <div id="seasonTools" style="padding:14px 20px 0"></div>
       <div class="month-grid" id="monthGrid"></div>
     </div>
 
     <div class="panel settings-pane" data-pane="data">
       <div class="panel-header">
         <div><div class="panel-title">Connected data sources</div>
-        <div class="panel-sub">Bring in the team's Daily Sales history, China/US/Amazon stock, and real safety-stock days — live if possible, uploaded if not.</div></div>
+        <div class="panel-sub">How the team sees today's numbers. Sales history comes only from the Orders files you upload — the old Google Sheet is no longer read.</div></div>
       </div>
       <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
 
         <div>
-          <div style="font-weight:600;font-size:13px;margin-bottom:4px">🔴 Live connect (auto-refreshes automatically)</div>
-          <div style="font-size:12px;color:var(--ink-dim);margin-bottom:10px">Uses a small Google Apps Script deployed from inside the Sheet — works even though this dashboard is a local file, and doesn't require making the sheet public.</div>
-          <div class="caveat info" style="margin:0 0 10px"><span>ℹ️</span><div>One-time setup in Google Sheets: <b>Extensions → Apps Script</b>, paste the provided script, then <b>Deploy → New deployment → Web app</b> (Execute as: Me, Who has access: Anyone). Copy the URL ending in <code>/exec</code> and paste it below.</div></div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">🔴 Team link (shared snapshot)</div>
+          <div style="font-size:12px;color:var(--ink-dim);margin-bottom:10px">A small Google Apps Script keeps the published snapshot in a Google Sheet you own. The sheet can be brand new and empty — it needs no tabs — and it is never made public.</div>
+          <div class="caveat info" style="margin:0 0 10px"><span>ℹ️</span><div>One-time setup: create a new Google Sheet → <b>Extensions → Apps Script</b>, paste <code>quasi-apps-script.gs</code> (v4), then <b>Deploy → New deployment → Web app</b> (Execute as: Me, Who has access: Anyone). Copy the URL ending in <code>/exec</code>, paste it below, and press Connect. Then press <b>Copy team link</b> and send it to the team once.</div></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="text" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" style="flex:1;min-width:280px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--surface);color:var(--ink)">
             <button class="btn btn-primary" onclick="connectAppsScript()">Connect live</button>
@@ -845,24 +852,16 @@ tbody tr:hover td{background:#FDF9F7}
           <div id="teamLinkStatus" style="font-size:11.5px;color:var(--ink-dim);margin-top:6px"></div>
         </div>
 
-        <div style="margin-top:6px;padding-top:14px;border-top:1px dashed var(--line2)">
-          <div style="font-weight:600;font-size:13px;margin-bottom:4px">Or upload the file directly</div>
-          <div style="font-size:12px;color:var(--ink-dim);margin-bottom:10px">No setup required — works fully offline. Good as a one-off, or as a fallback if the live connection ever has trouble.</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <button class="btn btn-outline" onclick="document.getElementById('fi-gsheetUpload').click()">Upload Excel / CSV</button>
-            <input type="file" accept=".xlsx,.xls,.csv" id="fi-gsheetUpload" style="display:none" onchange="uploadGSheetDailySales(event)">
-          </div>
-          <div id="gsheetDailySalesStatus" style="font-size:11.5px;color:var(--ink-dim);margin-top:8px"></div>
-        </div>
 
       </div>
     </div>
 
     <div class="panel settings-pane" data-pane="amazon">
       <div class="panel-header">
-        <div><div class="panel-title">Amazon SKU mapping</div>
-        <div class="panel-sub">Amazon SKU codes detected in your uploaded files, mapped to Quasi's 5 master SKUs. Confirm these are correct — SKU naming differs between platforms.</div></div>
+        <div><div class="panel-title">Amazon mapping — by ASIN</div>
+        <div class="panel-sub">Each Amazon product (ASIN) is mapped to one Quasi SKU; every seller SKU under that ASIN follows it. Matching never relies on the text of the seller SKU. An unmapped ASIN is not counted anywhere.</div></div>
       </div>
+      <div id="amazonOptions" style="padding:12px 20px 0"></div>
       <div id="mappingList"></div>
     </div>
 
@@ -936,6 +935,31 @@ const MASTER_SKUS = [
   { code:'SEALING-OIL-QUAS',     name:'Collagen Sealing Mask',   color:'#8F3454' },
   { code:'THANK-YOU-CARD',       name:'Thank You Cards',         color:'#6B5B95', orderBased:true },
 ];
+// SKUs added from Settings (new launches) are saved in this browser and join MASTER_SKUS before anything is
+// computed from it. `customSkus` is also published in the team snapshot so viewers see the same SKU list.
+const CUSTOM_SKU_COLORS = ['#2E8B8B','#A0522D','#5B7C99','#8A6BBE','#C48A2C','#4C9A6A'];
+function registerCustomSku(code, name){
+  code = String(code||'').trim(); if (!code) return false;
+  if (MASTER_SKUS.some(m=>m.code===code)) return false;
+  MASTER_SKUS.push({ code, name: String(name||'').trim() || code, color: CUSTOM_SKU_COLORS[MASTER_SKUS.length % CUSTOM_SKU_COLORS.length], custom:true });
+  return true;
+}
+function persistCustomSkus(){
+  try { localStorage.setItem('quasi_custom_skus', JSON.stringify(MASTER_SKUS.filter(m=>m.custom).map(m=>({code:m.code,name:m.name})))); } catch(e){}
+}
+(function loadCustomSkus(){
+  try { const raw = localStorage.getItem('quasi_custom_skus'); if (raw) JSON.parse(raw).forEach(x=>{ if (x) registerCustomSku(x.code, x.name); }); } catch(e){}
+  // Two launches the team has confirmed. The SKU codes below are PLACEHOLDERS until the real ShipSidekick codes exist:
+  // Settings → Add a SKU lets you change a SKU's code once you know it, and everything on it follows the rename.
+  try {
+    if (!localStorage.getItem('quasi_seeded_skus_v1')) {
+      registerCustomSku('EYE-MASK-QUAS', 'Eye Mask (new launch)');
+      registerCustomSku('SEALING-TURMERIC-QUAS', 'Turmeric Kojic Acid Sealing Mask');
+      localStorage.setItem('quasi_seeded_skus_v1','1');
+      localStorage.setItem('quasi_custom_skus', JSON.stringify(MASTER_SKUS.filter(m=>m.custom).map(m=>({code:m.code,name:m.name}))));
+    }
+  } catch(e){ registerCustomSku('EYE-MASK-QUAS', 'Eye Mask (new launch)'); registerCustomSku('SEALING-TURMERIC-QUAS', 'Turmeric Kojic Acid Sealing Mask'); }
+})();
 // SKUs flagged orderBased don't have their own line item — one unit ships with every single
 // order regardless of which mask(s) it contains (confirmed with Sylvia, 2026-09). Velocity for
 // these is driven by total order count, not by any per-SKU quantity in Products Summary.
@@ -948,18 +972,24 @@ const PRODUCT_SKU_COUNT = MASTER_SKUS.filter(s=>!s.orderBased).length;
 function defaultSettings() {
   return {
     skuConfig: {
-      'GLOWUP-ORIGINAL-QUAS': { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:76032, safetyDays:14, assumed:false },
-      'SALMON-MASK-QUAS':     { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:76032, safetyDays:14, assumed:true },
-      'NECK-QUAS':            { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:104544, safetyDays:14, assumed:true },
-      'CHEST-QUAS':           { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:104544, safetyDays:14, assumed:true },
-      'SEALING-OIL-QUAS':     { packagingDays:30, productionDays:7, shipMinDays:38, shipMaxDays:48, container:121632, safetyDays:14, assumed:false },
+      'GLOWUP-ORIGINAL-QUAS': { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:76032, safetyDays:14, lifecycle:'active', amazonListed:false, assumed:false },
+      'SALMON-MASK-QUAS':     { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:76032, safetyDays:14, lifecycle:'active', amazonListed:true, assumed:true },
+      'NECK-QUAS':            { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:104544, safetyDays:14, lifecycle:'active', amazonListed:false, assumed:true },
+      'CHEST-QUAS':           { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:104544, safetyDays:14, lifecycle:'discontinued', amazonListed:false, assumed:true },
+      'SEALING-OIL-QUAS':     { packagingDays:30, productionDays:7, shipMinDays:38, shipMaxDays:48, container:121632, safetyDays:14, lifecycle:'discontinued', amazonListed:true, assumed:false },
       // Matches Sain's own reorder math from Slack (2026-09): 38-48 day shipping, no separate
       // packaging/production leg mentioned, 2-week safety buffer. Container size is a placeholder —
       // no real print-run quantity confirmed yet, flagged assumed.
-      'THANK-YOU-CARD':       { packagingDays:0, productionDays:0, shipMinDays:38, shipMaxDays:48, container:200000, safetyDays:14, assumed:true },
+      'EYE-MASK-QUAS':        { packagingDays:14, productionDays:7, shipMinDays:38, shipMaxDays:48, container:76032, safetyDays:14, lifecycle:'launching', amazonListed:null, assumed:true },
+      'SEALING-TURMERIC-QUAS':{ packagingDays:30, productionDays:7, shipMinDays:38, shipMaxDays:48, container:121632, safetyDays:14, lifecycle:'launching', amazonListed:null, assumed:true },
+      'THANK-YOU-CARD':       { packagingDays:0, productionDays:0, shipMinDays:38, shipMaxDays:48, container:200000, safetyDays:14, lifecycle:'active', amazonListed:false, assumed:true },
     },
     seasonality: {1:1,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1,11:1,12:1},
-    amazonMapping: {}, // filled dynamically from detected SKUs; { 'SALMON-4PC-FBA': 'SALMON-MASK-QUAS', ... }
+    amazonMapping: {}, // legacy seller-SKU mapping, kept only to migrate into amazonAsinMapping the first time an ASIN is seen
+    amazonAsinMapping: {}, // { 'B0FYRXPRH6': 'SALMON-MASK-QUAS' } — the mapping that is actually used (ASIN, not SKU text)
+    amazonSubtractUnfulfillable: true, // Amazon position = available + fc-transfer + reserved + inbound - unfulfillable
+    leadTimeHistory: [],   // [{ts, sku, field, from, to, note}] — every edit to a lead-time field, newest last
+    stockouts: {},         // { sku: [{start, end, note}] } — out-of-stock periods excluded from velocity
     excludeRefunded: false,
     // Known production/shipping freeze windows — no new order can be placed during one. Seeded with
     // the Chinese New Year 2027 window from the ops team's own PO Planning sheet (factory freeze
@@ -988,10 +1018,27 @@ function loadSettings() {
       Object.assign(merged.amazonMapping, parsed.amazonMapping || {});
       merged.excludeRefunded = !!parsed.excludeRefunded;
       merged.freezeWindows = Array.isArray(parsed.freezeWindows) ? parsed.freezeWindows : merged.freezeWindows;
+      merged.amazonAsinMapping = parsed.amazonAsinMapping || {};
+      merged.leadTimeHistory = Array.isArray(parsed.leadTimeHistory) ? parsed.leadTimeHistory : [];
+      merged.stockouts = parsed.stockouts || {};
+      if (parsed.amazonSubtractUnfulfillable === false) merged.amazonSubtractUnfulfillable = false;
+      backfillSkuConfig(merged);
       return merged;
     }
   } catch(e) { console.warn('settings load failed', e); }
-  return defaultSettings();
+  const fresh = defaultSettings(); backfillSkuConfig(fresh); return fresh;
+}
+// Settings saved before lifecycle / Amazon-listing existed get those fields filled from the defaults; SKUs added from
+// Settings (no default entry) start as launching with a copy of the Glow Up lead-time template.
+function backfillSkuConfig(st){
+  const def = defaultSettings().skuConfig;
+  MASTER_SKUS.forEach(m=>{
+    let c = st.skuConfig[m.code];
+    if (!c) { const d0 = def[m.code]; c = st.skuConfig[m.code] = d0 ? { ...d0 } : { ...def['GLOWUP-ORIGINAL-QUAS'], container:76032, lifecycle:'launching', amazonListed:null, assumed:true }; }
+    const d = def[m.code];
+    if (!c.lifecycle) c.lifecycle = d ? d.lifecycle : 'active';
+    if (c.amazonListed === undefined) c.amazonListed = d ? d.amazonListed : null;
+  });
 }
 function persistSettings() {
   try { localStorage.setItem('quasi_dashboard_settings_v1', JSON.stringify(SETTINGS)); }
@@ -1137,8 +1184,9 @@ async function fetchOpsDataViaAppsScript(url){
   let data;
   try { data = await res.json(); }
   catch(e) { throw new Error('Got a response, but it wasn\u2019t valid JSON — check the Apps Script code matches what was provided.'); }
-  if (!data.dailySales) throw new Error('Response is missing "dailySales" — check the sheet is still named exactly "Daily Sales - Total".');
-  const daily = rowsToDailySales(data.dailySales);
+  // The Google Sheet this dashboard used to read sales from no longer exists. Sales history now comes only from the
+  // uploaded Orders files, so a missing "dailySales" is normal and not an error.
+  const daily = null;
   let china = null, safety = null, warnings = [];
   if (data.dashboard) {
     try {
@@ -1162,7 +1210,7 @@ async function fetchOpsDataViaAppsScript(url){
 // republish daily sales history (that's already centrally available via the Daily Sales connection).
 async function publishSnapshotForTeam(auto){
   const url = loadGSheetConfig() || DEFAULT_APPS_SCRIPT_URL;
-  if (!url) { setPublishStatus('Connect the live Apps Script URL first (above) before publishing.', 'err'); return false; }
+  if (!url && !LIVE_ON) { setPublishStatus('Live sharing isn\u2019t available on this copy of the dashboard (it needs the /api/snapshot endpoint on the Vercel site, or an Apps Script URL in Settings).', 'err'); return false; }
   if (!D) { setPublishStatus('Load data first — nothing to publish yet.', 'err'); return false; }
   if (D.fromTeamSnapshot) { setPublishStatus('This session was loaded from the team\u2019s published data — upload your own files first if you want to publish new numbers.', 'err'); return false; }
   setPublishStatus(auto ? 'Auto-publishing for the team…' : 'Publishing…', null);
@@ -1170,12 +1218,24 @@ async function publishSnapshotForTeam(auto){
   let by = ((nameEl && nameEl.value) || '').trim();
   try { if (by) localStorage.setItem('quasi_published_by', by); else by = localStorage.getItem('quasi_published_by') || ''; } catch(e){}
   by = by || 'Someone';
+  // Trim the daily series to the last 90 days: charts and the velocity window only need that much.
+  const lastDays = Object.keys(D.shopify.dailyUnits||{}).sort().slice(-90);
+  const dailyUnits = {}; lastDays.forEach(d=>{ dailyUnits[d] = D.shopify.dailyUnits[d]; });
+  const obDaily = {}; Object.keys(D.shopify.orderBasedDaily||{}).sort().slice(-90).forEach(d=>{ obDaily[d] = D.shopify.orderBasedDaily[d]; });
+  const rates = {};
+  MASTER_SKUS.forEach(m=>{ const r = skuRate(m.code); rates[m.code] = { ok:r.ok, reason:r.reason, shop:r.shop, windowStart:r.windowStart, windowEnd:r.windowEnd, windowDays:r.windowDays, inStockDays:r.inStockDays, excludedDays:r.excludedDays, historyDays:r.historyDays, lowConfidence:r.lowConfidence, windowUnits:r.windowUnits, unit:r.unit }; });
   const snapshot = {
     asOf: D.asOf,
     shopInv: D.shopify.inv,
     amzFba: D.amazon.fba,
     amazonSkusDetected: D.amazonSkusDetected,
     amazonMapping: SETTINGS.amazonMapping,
+    amazonAsinMapping: SETTINGS.amazonAsinMapping,
+    customSkus: MASTER_SKUS.filter(m=>m.custom).map(m=>({code:m.code,name:m.name})),
+    dailyUnits, orderBasedDaily: obDaily,
+    shopMinDate: D.shopify.minDate||null, shopMaxDate: D.shopify.maxDate||null,
+    rates,
+    history: loadHistory().slice(-40),
     orderBasedTotal: D.shopify.orderBasedTotal||0,
     orderBasedDayCount: D.shopify.orderBasedDayCount||1,
     orderBasedMinDate: D.shopify.orderBasedMinDate||null,
@@ -1184,21 +1244,36 @@ async function publishSnapshotForTeam(auto){
     countedOrders: D.shopify.countedOrders||0,
     publishedAt: new Date().toISOString(),
   };
-  // Published as a GET, not POST — Apps Script reliably supports CORS on GET but not on doPost.
-  const publishUrl = `${url}${url.includes('?')?'&':'?'}action=publish&by=${encodeURIComponent(by)}&data=${encodeURIComponent(JSON.stringify(snapshot))}`;
-  try {
-    const res = await fetch(publishUrl, { cache:'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = await res.json();
-    if (!result.ok) {
-      const looksLikeReadPayload = result && (result.dailySales !== undefined || result.dashboard !== undefined || result.generatedAt !== undefined);
-      const hint = looksLikeReadPayload
-        ? 'The response looks like the normal data-read reply, not a publish confirmation — this usually means the Apps Script URL is still running an older version. Deploy → Manage deployments → pencil icon → Version: "New version" → Deploy.'
-        : 'Unexpected response shape: ' + JSON.stringify(result).slice(0,150);
-      throw new Error((result.error || 'Publish was not confirmed') + '. ' + hint);
+  if (LIVE_ON) {
+    try {
+      await publishLive(snapshot, by);
+      TEAM_SNAPSHOT = snapshot; TEAM_SNAPSHOT_META = { publishedAt: snapshot.publishedAt, publishedBy: by };
+      setPublishStatus(`✓ ${auto?'Auto-published':'Published'} as ${by} and confirmed — everyone with the dashboard link sees these numbers. (${new Date().toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'})})`, 'ok');
+      return true;
+    } catch(e) {
+      setPublishStatus('✗ Publish failed: ' + (e && (e.message||e.code) || e) + (e && e.code==='not_granted' ? ' — you need edit/contribute access on this page.' : ''), 'err');
+      return false;
     }
+  }
+  // Sent as a POST with a plain-text body (no CORS preflight; the browser can't read the reply, so success is confirmed by
+  // reading the published time back). The old GET method put the whole snapshot in the URL, which is too long for sales history.
+  try {
+    const sentAt = Date.now();
+    await fetch(url, { method:'POST', mode:'no-cors', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ action:'publish', by, snapshot }) });
+    let confirmed = false, lastSeen = '';
+    for (let i=0; i<5 && !confirmed; i++) {
+      await new Promise(r=>setTimeout(r, i===0 ? 1200 : 2000));
+      try {
+        const rr = await fetch(url + (url.includes('?')?'&':'?') + 't=' + Date.now(), { cache:'no-store' });
+        const back = await rr.json();
+        lastSeen = back.teamSnapshotPublishedAt || '';
+        const t = back.teamSnapshot && back.teamSnapshot.publishedAt ? Date.parse(back.teamSnapshot.publishedAt) : NaN;
+        if (t === Date.parse(snapshot.publishedAt)) confirmed = true;
+      } catch(e) { /* try again */ }
+    }
+    if (!confirmed) throw new Error('The upload was sent but the shared copy did not change. Most likely the Apps Script is still an old version — Deploy → Manage deployments → pencil → Version: "New version" → Deploy (use quasi-apps-script.gs v4). Last published copy seen: ' + (lastSeen || 'none') + '.');
     TEAM_SNAPSHOT = snapshot; TEAM_SNAPSHOT_META = { publishedAt: snapshot.publishedAt, publishedBy: by };
-    setPublishStatus(`✓ ${auto?'Auto-published':'Published'} as ${by} — the team sees these numbers just by opening the link, no upload needed. (${new Date().toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'})})`, 'ok');
+    setPublishStatus(`✓ ${auto?'Auto-published':'Published'} as ${by} and confirmed — the team sees these numbers just by opening the link, no upload needed. (${new Date().toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'})})`, 'ok');
     return true;
   } catch(e) {
     setPublishStatus('✗ Publish failed: ' + e.message, 'err');
@@ -1206,12 +1281,68 @@ async function publishSnapshotForTeam(auto){
     return false;
   }
 }
+// ---- Live team store: this site's own /api/snapshot endpoint (Vercel function + Vercel Blob) — no Google Sheet ----
+// LIVE_ON becomes true only when /api/snapshot answers (i.e. on the Vercel deployment). From a local file or without
+// the endpoint it stays false and the older Apps Script path is used exactly as before.
+let LIVE_ON = false;
+const SNAP_API = '/api/snapshot';
+function liveKey(){ try { return localStorage.getItem('quasi_publish_key') || ''; } catch(e){ return ''; } }
+async function publishLive(snapshot, by){
+  const send = async (key) => fetch(SNAP_API, { method:'POST', headers:{ 'Content-Type':'application/json', ...(key?{'x-publish-key':key}:{}) }, body: JSON.stringify({ by, snapshot }) });
+  let res = await send(liveKey());
+  if (res.status === 401) {
+    const k = (typeof window.prompt==='function') ? window.prompt('This dashboard needs the team publish key to publish (ask Sain). Enter it:') : null;
+    if (!k) throw new Error('Publishing needs the team publish key.');
+    try { localStorage.setItem('quasi_publish_key', k.trim()); } catch(e){}
+    res = await send(k.trim());
+  }
+  let out = null; try { out = await res.json(); } catch(e){}
+  if (!res.ok || !out || !out.ok) throw new Error((out && out.error) || ('Server answered HTTP ' + res.status));
+  const back = await readLive();
+  if (!back || back.snapshot.publishedAt !== snapshot.publishedAt) throw new Error('The shared copy did not update — please try again.');
+}
+async function readLive(){
+  const r = await fetch(SNAP_API + '?t=' + Date.now(), { cache:'no-store' });
+  if (!r.ok) return null;
+  const j = await r.json();
+  if (!j || !j.ok || !j.teamSnapshot) return null;
+  return { snapshot: j.teamSnapshot, meta: { publishedAt: j.publishedAt, by: j.publishedBy||'' } };
+}
+async function liveMetaAt(){
+  try { const r = await fetch(SNAP_API + '?meta=1&t=' + Date.now(), { cache:'no-store' }); const j = await r.json(); return (j && j.ok) ? (j.publishedAt||'') : null; } catch(e){ return null; }
+}
+function adoptLive(r){
+  if (!r) return;
+  const newer = !TEAM_SNAPSHOT || TEAM_SNAPSHOT.publishedAt !== r.snapshot.publishedAt;
+  TEAM_SNAPSHOT = r.snapshot; TEAM_SNAPSHOT_META = { publishedAt: r.meta.publishedAt, publishedBy: r.meta.by||'' };
+  if (!newer) return;
+  if (D && D.fromTeamSnapshot) { applyTeamSnapshotToD(TEAM_SNAPSHOT); renderAll(); }
+  else if (!D) checkTeamSnapshotCard();
+}
+async function initLiveTeamStore(){
+  try {
+    const probe = await fetch(SNAP_API + '?meta=1&t=' + Date.now(), { cache:'no-store' });
+    if (!probe.ok) return;
+    const pj = await probe.json();
+    if (!pj || pj.ok !== true) return;
+    LIVE_ON = true;
+    adoptLive(await readLive());
+    // Teammates' open tabs pick up a new publish within a minute.
+    let lastAt = (TEAM_SNAPSHOT && TEAM_SNAPSHOT.publishedAt) || '';
+    setInterval(async ()=>{
+      const at = await liveMetaAt();
+      if (at === null || at === lastAt) return;
+      lastAt = at; adoptLive(await readLive());
+    }, 60000);
+    setPublishStatus('Live sharing is on — publishing here updates everyone with the link.', 'ok');
+  } catch(e){ /* no endpoint here — Apps Script path stays available */ }
+}
 // Runs right after an upload finishes, so the morning routine is just "upload" — nothing else to press.
 function autoPublishEnabled(){ try { return localStorage.getItem('quasi_autopublish_off') !== '1'; } catch(e){ return true; } }
 function setAutoPublish(on){ try { localStorage.setItem('quasi_autopublish_off', on ? '' : '1'); } catch(e){} }
 async function maybeAutoPublish(){
   if (!autoPublishEnabled() || !D) return;
-  if (!(loadGSheetConfig() || DEFAULT_APPS_SCRIPT_URL)) return; // not connected — nothing to publish to
+  if (!LIVE_ON && !(loadGSheetConfig() || DEFAULT_APPS_SCRIPT_URL)) return; // not connected — nothing to publish to
   // Don't let an older upload silently replace a newer team snapshot (e.g. someone re-uploading last week's files).
   if (TEAM_SNAPSHOT && (TEAM_SNAPSHOT.asOf||'') > (D.asOf||'')) {
     setPublishStatus(`Not auto-published: the team's snapshot (${TEAM_SNAPSHOT.asOf}) is newer than these files (${D.asOf}). Press "Publish for team" if you really want to replace it.`, 'err');
@@ -1223,6 +1354,12 @@ async function maybeAutoPublish(){
 async function copyTeamLink(){
   const el = document.getElementById('teamLinkStatus');
   const say = (m,t)=>{ if(el){ el.textContent=m; el.style.color = t==='ok'?'var(--jade)':t==='err'?'var(--red)':'var(--ink-dim)'; } };
+  if (LIVE_ON) {
+    const link = location.origin + location.pathname;
+    try { await navigator.clipboard.writeText(link); say('✓ Copied the dashboard link — paste it in Slack. Teammates open it and see the latest published numbers; nothing to set up.', 'ok'); }
+    catch(e) { window.prompt('Copy this link and send it to the team:', link); say('Link shown above — copy it from the prompt.', null); }
+    return;
+  }
   const url = loadGSheetConfig() || DEFAULT_APPS_SCRIPT_URL;
   if (!url) { say('Connect live first — the link is built from your Apps Script URL.', 'err'); return; }
   if (typeof location==='undefined' || !/^https?:$/.test(location.protocol)) { say('Open the hosted (Vercel) version of the dashboard to copy the team link — from a local file it can\u2019t know the web address.', 'err'); return; }
@@ -1249,26 +1386,36 @@ function normalizeInvRecords(inv){
 function applyTeamSnapshotToD(snapshot){
   if (!snapshot) return;
   const asOf = snapshot.asOf || todayISO();
+  (snapshot.customSkus||[]).forEach(x=>registerCustomSku(x.code, x.name));
+  backfillSkuConfig(SETTINGS);
+  const dailyUnits = snapshot.dailyUnits || {};
+  const skuUnits = {};
+  Object.keys(dailyUnits).forEach(d=>Object.entries(dailyUnits[d]).forEach(([k,q])=>{ skuUnits[k] = (skuUnits[k]||0)+q; }));
+  const shopMin = snapshot.shopMinDate || snapshot.orderBasedMinDate || asOf, shopMax = snapshot.shopMaxDate || snapshot.orderBasedMaxDate || asOf;
   // Built with every field the tabs read, not just inventory — a half-empty session crashed render.
   D = {
     asOf,
     shopify: {
-      skuUnits:{}, skuOrders:{}, dailyUnits:{}, dayCount:1,
-      minDate: snapshot.orderBasedMinDate || asOf, maxDate: snapshot.orderBasedMaxDate || asOf,
+      skuUnits, skuOrders:{}, dailyUnits, dayCount: Math.max(1, isoDiff(shopMin, shopMax)+1),
+      minDate: shopMin, maxDate: shopMax,
       cancelledCount: snapshot.cancelledCount||0, refundedCount:0, countedOrders: snapshot.countedOrders||0,
       bundleUnits:{}, inv: normalizeInvRecords(snapshot.shopInv),
       // Thank You Cards velocity comes from order counts, which only exist after an Orders upload —
       // so the uploader publishes them along with inventory.
-      orderBasedDaily:{}, orderBasedTotal: snapshot.orderBasedTotal||0, orderBasedDayCount: snapshot.orderBasedDayCount||1,
+      orderBasedDaily: snapshot.orderBasedDaily || {}, orderBasedTotal: snapshot.orderBasedTotal||0, orderBasedDayCount: snapshot.orderBasedDayCount||1,
       orderBasedMinDate: snapshot.orderBasedMinDate||null, orderBasedMaxDate: snapshot.orderBasedMaxDate||null,
     },
     amazon: { fba: snapshot.amzFba || {}, orders:{}, orderCounts:{}, hasOrdersFile:false },
     amazonSkusDetected: snapshot.amazonSkusDetected || [],
     fromTeamSnapshot: true,
+    publishedRates: snapshot.rates || null,
+    history: snapshot.history || null,
     teamPublishedAt: snapshot.publishedAt || null,
     teamPublishedBy: (TEAM_SNAPSHOT_META && TEAM_SNAPSHOT_META.publishedBy) || '',
   };
   if (snapshot.amazonMapping) SETTINGS.amazonMapping = { ...SETTINGS.amazonMapping, ...snapshot.amazonMapping };
+  if (snapshot.amazonAsinMapping) SETTINGS.amazonAsinMapping = { ...SETTINGS.amazonAsinMapping, ...snapshot.amazonAsinMapping };
+  invalidateRates();
 }
 // Opens the workbook once and pulls whatever it can find — Daily Sales (required),
 // Dashboard roll-up and Safety Stock Config (both optional enhancements, silently
@@ -1298,27 +1445,7 @@ function parseOpsWorkbook(arrayBuffer){
   return { daily, china, safety, warnings };
 }
 function applyGSheetDailySalesToD(){
-  if (!D || !GSHEET_DAILY) return;
-  const dates = Object.keys(GSHEET_DAILY).sort();
-  if (!dates.length) return;
-  const skuUnits = {};
-  dates.forEach(d=>{ Object.entries(GSHEET_DAILY[d]).forEach(([sku,qty])=>{ skuUnits[sku] = (skuUnits[sku]||0)+qty; }); });
-  D.shopify.dailyUnits = GSHEET_DAILY;
-  D.shopify.skuUnits = skuUnits;
-  D.shopify.minDate = dates[0];
-  D.shopify.maxDate = dates[dates.length-1];
-  D.shopify.dayCount = Math.max(1, Math.round((new Date(dates[dates.length-1]) - new Date(dates[0]))/86400000) + 1);
-  D.shopify.gsheetConnected = true;
-  // The connected sheet only knows the 5 masks — re-merge order-based SKUs (Thank You Cards) back
-  // into dailyUnits/skuUnits so their charts/momentum still work; their own velocity calc doesn't
-  // depend on this (see shopifyVelocity), but the display data does.
-  ORDER_BASED_SKUS.forEach(sku=>{
-    Object.entries(D.shopify.orderBasedDaily||{}).forEach(([d,count])=>{
-      if (!D.shopify.dailyUnits[d]) D.shopify.dailyUnits[d] = {};
-      D.shopify.dailyUnits[d][sku] = count;
-    });
-    if (D.shopify.orderBasedTotal) D.shopify.skuUnits[sku] = D.shopify.orderBasedTotal;
-  });
+  // Retired: the Google Sheet no longer exists. Kept as a no-op so no code path can swap the uploaded sales for old cached data.
 }
 function setGSheetStatus(msg, tone){
   const el = document.getElementById('gsheetDailySalesStatus');
@@ -1326,8 +1453,10 @@ function setGSheetStatus(msg, tone){
   el.innerHTML = msg;
   el.style.color = tone==='ok' ? 'var(--jade)' : tone==='err' ? 'var(--red)' : 'var(--ink-dim)';
 }
-function onOpsDataLoaded({ daily, china, safety, warnings }){
-  GSHEET_DAILY = daily; CHINA_STOCK = china; OPS_SAFETY_DAYS = safety;
+function onOpsDataLoaded({ china, safety, warnings }){
+  // Sales history is no longer read from any sheet (it was retired) — uploads are the single source, so a stale cached
+  // sheet history can never override them. Optional China-stock / safety-stock tabs are still honoured if a sheet has them.
+  GSHEET_DAILY = null; CHINA_STOCK = china || null; OPS_SAFETY_DAYS = safety || null;
   if (safety) {
     Object.entries(safety).forEach(([sku,days])=>{
       if (SETTINGS.skuConfig[sku]) { SETTINGS.skuConfig[sku].safetyDays = days; SETTINGS.skuConfig[sku].assumed = false; }
@@ -1335,15 +1464,7 @@ function onOpsDataLoaded({ daily, china, safety, warnings }){
     persistSettings();
   }
   persistOpsData();
-  const dates = Object.keys(daily).sort();
-  let msg = `✓ Connected — ${dates.length} days of sales (${dates[0]} to ${dates[dates.length-1]}).`;
-  if (D && D.shopify && D.shopify.maxDate && dates.length && D.shopify.maxDate > dates[dates.length-1] && !D.shopify.gsheetConnected)
-    msg += `<br>⚠️ Your uploaded orders run to ${D.shopify.maxDate} but the sheet's sales stop at ${dates[dates.length-1]} — the sheet replaces uploaded sales, so the newest days will be missing until the sheet is updated.`;
-  if (china) msg += `<br>✓ China/US/Amazon stock loaded for ${Object.keys(china).length} SKUs.`;
-  if (safety) msg += `<br>✓ Real safety-stock days loaded for ${Object.keys(safety).length} SKUs — see Settings.`;
-  if (warnings && warnings.length) msg += warnings.map(w=>`<br>⚠️ ${w}`).join('');
-  setGSheetStatus(msg, 'ok');
-  if (D) { applyGSheetDailySalesToD(); saveSnapshotToStorage(D); renderAll(); buildSettingsUI(); }
+  if (D && (china || safety)) { renderAll(); buildSettingsUI(); }
 }
 let autoRefreshTimer = null;
 function setAppsScriptStatus(msg, tone){
@@ -1369,17 +1490,15 @@ async function connectAppsScript(){
   } catch(e) { setAppsScriptStatus('✗ ' + e.message, 'err'); console.error(e); }
 }
 function buildOpsStatusMsg(result, live){
-  const dates = Object.keys(result.daily).sort();
-  const lastDate = dates[dates.length-1];
-  const daysBehindToday = Math.round((new Date(todayISO()+'T00:00:00') - new Date(lastDate+'T00:00:00')) / 86400000);
-  let msg = `✓ ${live?'Live-connected':'Loaded'} — ${dates.length} days of sales (${dates[0]} to ${lastDate}).`;
-  if (daysBehindToday >= 2) {
-    msg += `<br><span style="color:var(--amber)">⚠️ The sheet's own sales data is ${daysBehindToday} days behind today — its most recent days likely haven't been filled in on their end yet. This isn't a fetch problem; check "Daily Sales - Total" directly for ${lastDate} onward.</span>`;
-  }
-  if (result.china) msg += `<br>✓ China/US/Amazon stock loaded for ${Object.keys(result.china).length} SKUs.`;
-  if (result.safety) msg += `<br>✓ Real safety-stock days loaded for ${Object.keys(result.safety).length} SKUs.`;
+  let msg = `✓ ${live?'Connected to the team link':'Loaded'}.`;
+  if (result.teamSnapshotPublishedAt) {
+    const when = new Date(result.teamSnapshotPublishedAt);
+    msg += ` Last published snapshot: ${isNaN(when) ? result.teamSnapshotPublishedAt : when.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${result.teamSnapshotPublishedBy?' by '+result.teamSnapshotPublishedBy:''}.`;
+  } else msg += ' Nothing has been published yet.';
+  if (result.china) msg += `<br>✓ China stock loaded for ${Object.keys(result.china).length} SKUs.`;
+  if (result.safety) msg += `<br>✓ Safety-stock days loaded for ${Object.keys(result.safety).length} SKUs.`;
   if (result.warnings && result.warnings.length) msg += result.warnings.map(w=>`<br>⚠️ ${w}`).join('');
-  if (live) msg += `<br><span style="color:var(--ink-dim)">Last refreshed ${new Date().toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'})}.</span>`;
+  if (live) msg += `<br><span style="color:var(--ink-dim)">Last checked ${new Date().toLocaleString('en-US',{hour:'2-digit',minute:'2-digit'})}.</span>`;
   return msg;
 }
 function toggleAutoRefresh(on){
@@ -1439,7 +1558,10 @@ function autoReconnectGSheet(){
   } catch(e){}
   try { const nm=document.getElementById('publishedByName'); const saved=localStorage.getItem('quasi_published_by'); if (nm && saved && !nm.value) nm.value=saved; } catch(e){}
   const apt=document.getElementById('autoPublishToggle'); if (apt) apt.checked = autoPublishEnabled();
-  const cached = loadOpsData();
+  // One-time cleanup: drop anything cached from the old Google Sheet so it can never reach the numbers again.
+  try { ['quasi_gsheet_daily_sales_data','quasi_china_stock_data','quasi_ops_safety_days'].forEach(k=>localStorage.removeItem(k)); } catch(e){}
+  GSHEET_DAILY = null; CHINA_STOCK = null; OPS_SAFETY_DAYS = null;
+  const cached = { daily:null, china:null, safety:null };
   // Fall back to the team-wide default (baked into the file) when this browser has never
   // configured its own URL — this is what lets a first-time visitor, not just whoever originally
   // set it up, connect automatically.
@@ -1506,9 +1628,9 @@ function saveSnapshotToStorage(d){
     const entry = { uploadedAt: new Date().toISOString(), asOf: d.asOf, skus:{} };
     MASTER_SKUS.forEach(s=>{
       const shopOnHand = (d.shopify.inv[s.code]||{unreserved:0}).unreserved;
-      let amzOnHand=0;
-      Object.entries(SETTINGS.amazonMapping).forEach(([a,m])=>{ if(m===s.code && d.amazon.fba[a]) amzOnHand += d.amazon.fba[a].available; });
-      const vel = Math.round(((d.shopify.skuUnits[s.code]||0)/d.shopify.dayCount)*10)/10;
+      const amzOnHand = amazonQty(s.code).position;
+      const rt = skuRate(s.code);
+      const vel = rt.ok ? Math.round(rt.shop*10)/10 : 0;
       entry.skus[s.code] = { onHand: shopOnHand+amzOnHand, vel };
     });
     // avoid duplicate consecutive entries for the same asOf date (re-loading the same file twice)
@@ -1552,7 +1674,7 @@ function checkResumeCard(){
 function resumeSession(){
   const d = loadSnapshotFromStorage();
   if (!d) return;
-  D = d;
+  D = d; invalidateRates();
   document.getElementById('uploadScreen').style.display='none';
   document.getElementById('app').style.display='block';
   buildSettingsUI();
@@ -1579,7 +1701,6 @@ function checkTeamSnapshotCard(){
 function loadTeamSnapshot(silent){
   if (!TEAM_SNAPSHOT) return;
   applyTeamSnapshotToD(TEAM_SNAPSHOT);
-  if (GSHEET_DAILY) applyGSheetDailySalesToD(); // layer in the connected sales history on top
   hideTeamCard();
   document.getElementById('uploadScreen').style.display='none';
   document.getElementById('app').style.display='block';
@@ -1633,7 +1754,7 @@ const DEFAULT_UNIT_COST = { // most recent observed costs, from the team's PO hi
 };
 function normalizeInboundRow(r){
   return {
-    id: r.id, sku: r.sku, qty: r.qty||0, orderDate: r.orderDate||'', estDelivery: r.estDelivery||'', status: r.status||'planned',
+    id: r.id, sku: r.sku, containerNumber: r.containerNumber||'', qty: r.qty||0, orderDate: r.orderDate||'', estDelivery: r.estDelivery||'', status: r.status||'planned',
     poNumber: r.poNumber||'', unitCost: r.unitCost!==undefined ? r.unitCost : (DEFAULT_UNIT_COST[r.sku]||0),
     depositPaid: r.depositPaid||0, paymentStatus: r.paymentStatus||'', shippingCost: r.shippingCost||0,
     shippingPaymentStatus: r.shippingPaymentStatus||'', productionComplete: r.productionComplete||'', receiveDate: r.receiveDate||'',
@@ -1658,7 +1779,7 @@ function samePO(a,b){ return !a.poNumber || !b.poNumber || a.poNumber===b.poNumb
 const INBOUND_STATUS_RANK = { planned:0, 'in transit':1, delayed:1, received:2 };
 // Fill the kept row from the other one: take any field the kept row lacks; keep the further-along status.
 function mergeInboundInto(keep, other){
-  ['poNumber','paymentStatus','shippingPaymentStatus','productionComplete','receiveDate','notes'].forEach(f=>{ if (!keep[f] && other[f]) keep[f]=other[f]; });
+  ['poNumber','containerNumber','paymentStatus','shippingPaymentStatus','productionComplete','receiveDate','notes'].forEach(f=>{ if (!keep[f] && other[f]) keep[f]=other[f]; });
   ['depositPaid','shippingCost'].forEach(f=>{ if (!keep[f] && other[f]) keep[f]=other[f]; });
   if ((INBOUND_STATUS_RANK[other.status]||0) > (INBOUND_STATUS_RANK[keep.status]||0)) keep.status = other.status;
   return keep;
@@ -1698,6 +1819,8 @@ function updateInboundField(id, field, value){
   const row = INBOUNDS.find(r=>r.id===id);
   if (!row) return;
   row[field] = (field==='qty') ? (parseInt(value)||0) : value;
+  // marking a shipment received stamps today as the actual receive date (editable) so it never sits received-but-undated
+  if (field==='status' && value==='received' && !row.receiveDate) row.receiveDate = todayISO();
   persistInbounds();
   if (D) renderAll(); else renderInbounds();
 }
@@ -1734,6 +1857,7 @@ function importInboundsCSV(e){
         const nr = normalizeInboundRow({
           id:'imp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), sku:master, qty, orderDate, estDelivery, status,
           poNumber: r['PO Number']||r['PO#']||r['PO']||'',
+          containerNumber: r['Container Number']||r['Container #']||r['Container']||'',
           unitCost: parseFloat(r['Unit Cost']||r['Unit Cost (USD)']||'')||undefined,
           depositPaid: parseFloat((r['Deposit Paid']||r['Deposit Paid (USD)']||'0').toString().replace(/,/g,''))||0,
           paymentStatus: r['Payment Status']||'',
@@ -1766,8 +1890,8 @@ function normalizeDate(v){
   return isNaN(d) ? '' : d.toISOString().slice(0,10);
 }
 function exportInboundsCSV(){
-  downloadCSV('quasi-inbounds.csv', ['SKU','Name','PO Number','Qty','Unit Cost','Total Amount','Deposit Paid','Balance Due','Payment Status','Order Date','Production Complete Date','Shipping Cost','Shipping Payment Status','Est Delivery Date','Receive Date','Status','Notes'],
-    INBOUNDS.map(r=>[r.sku, skuName(r.sku), r.poNumber, r.qty, r.unitCost, totalAmount(r).toFixed(2), r.depositPaid, balanceDue(r).toFixed(2), r.paymentStatus, r.orderDate, r.productionComplete, r.shippingCost, r.shippingPaymentStatus, r.estDelivery, r.receiveDate, r.status, r.notes]));
+  downloadCSV('quasi-inbounds.csv', ['SKU','Name','PO Number','Container Number','Qty','Unit Cost','Total Amount','Deposit Paid','Balance Due','Payment Status','Order Date','Production Complete Date','Shipping Cost','Shipping Payment Status','Est Delivery Date','Receive Date','Status','Notes'],
+    INBOUNDS.map(r=>[r.sku, skuName(r.sku), r.poNumber, r.containerNumber, r.qty, r.unitCost, totalAmount(r).toFixed(2), r.depositPaid, balanceDue(r).toFixed(2), r.paymentStatus, r.orderDate, r.productionComplete, r.shippingCost, r.shippingPaymentStatus, r.estDelivery, r.receiveDate, r.status, r.notes]));
 }
 // Pending = already placed and not yet arrived (counts toward inbound coverage).
 // "planned" rows are shown for visibility but not counted as committed inbound stock.
@@ -1990,17 +2114,32 @@ async function processFiles(){
     });
 
     // ---- Amazon FBA ----
-    const amzFba = {}; // sku -> {...fields}
+    const amzFba = {}; // seller sku -> {...fields}
     const amazonSkusDetected = new Set();
     let fbaSnapshotDate = '';
+    // A repeated line for the same seller SKU + condition is the same stock exported twice (last one wins); different conditions
+    // of one SKU are different stock and are added together.
+    const amzByKey = {};
     amzFbaRaw.forEach(row=>{
-      const sku=row['sku'];
+      const sku = (row['sku']||'').trim();
       if (!sku) return;
       amazonSkusDetected.add(sku);
       fbaSnapshotDate = row['snapshot-date'] || fbaSnapshotDate;
-      amzFba[sku] = {
-        available: parseInt(row['available'])||0,
-        inbound: parseInt(row['inbound-quantity'])||0,
+      amzByKey[sku+'|'+(row['condition']||'')] = row;
+    });
+    const num = v => parseInt(String(v||'').replace(/,/g,'')) || 0;
+    Object.values(amzByKey).forEach(row=>{
+      const sku = (row['sku']||'').trim();
+      const reserved = row['Total Reserved Quantity'] !== undefined && row['Total Reserved Quantity'] !== ''
+        ? num(row['Total Reserved Quantity'])
+        : num(row['Reserved FC Processing']) + num(row['Reserved Customer Order']) + num(row['Reserved Staging']);
+      const rec = {
+        asin: (row['asin']||'').trim(),
+        available: num(row['available']),
+        fcTransfer: num(row['fc-transfer']),
+        reserved,
+        inbound: num(row['inbound-quantity']),
+        unfulfillable: num(row['unfulfillable-quantity']),
         t7: parseFloat(row['units-shipped-t7'])||0,
         t30: parseFloat(row['units-shipped-t30'])||0,
         t60: parseFloat(row['units-shipped-t60'])||0,
@@ -2010,7 +2149,14 @@ async function processFiles(){
         weeksCoverT90: parseFloat(row['weeks-of-cover-t90'])||0,
         recAction: row['recommended-action']||'',
         productName: row['product-name']||'',
+        healthStatus: row['fba-inventory-level-health-status']||'',
+        recShipInQty: num(row['Recommended ship-in quantity']),
+        recShipInDate: (row['Recommended ship-in date']||'').trim(),
+        lowFee: (row['Low-Inventory-Level fee applied in current week?']||'').trim(),
+        alert: row['alert']||'',
       };
+      if (!amzFba[sku]) amzFba[sku] = rec;
+      else ['available','fcTransfer','reserved','inbound','unfulfillable','t7','t30','t60','t90'].forEach(k=>{ amzFba[sku][k] += rec[k]; });
     });
 
     // ---- Amazon Orders (optional, FBM reference) ----
@@ -2034,6 +2180,19 @@ async function processFiles(){
         SETTINGS.amazonMapping[sku] = DEFAULT_AMAZON_GUESSES[sku] || '';
       }
     });
+    // Amazon rows are matched to a product by ASIN. The first time an ASIN is seen it inherits the mapping already saved for its
+    // seller SKU(s); if two seller SKUs of one ASIN disagree it is left UNMAPPED and flagged — never guessed.
+    const amazonWarnings = [];
+    const byAsin = {};
+    Object.entries(amzFba).forEach(([sku,f])=>{ if (f.asin) (byAsin[f.asin] = byAsin[f.asin] || []).push(sku); });
+    Object.entries(byAsin).forEach(([asin,skus])=>{
+      if (asin in SETTINGS.amazonAsinMapping) return;
+      const cands = Array.from(new Set(skus.map(k=>SETTINGS.amazonMapping[k]).filter(Boolean)));
+      SETTINGS.amazonAsinMapping[asin] = cands.length === 1 ? cands[0] : '';
+      if (cands.length > 1) amazonWarnings.push(`ASIN ${asin} has seller SKUs mapped to different products (${cands.map(skuName).join(' / ')}) — left unmapped; choose the right product in Settings → Amazon mapping.`);
+    });
+    Object.entries(byAsin).forEach(([asin,skus])=>{ if (!SETTINGS.amazonAsinMapping[asin]) amazonWarnings.push(`Amazon ASIN ${asin} (${skus.join(', ')}) is not mapped to a product — its stock and sales are NOT counted until you map it in Settings.`); });
+    Object.entries(amzFba).forEach(([sku,f])=>{ if (!f.asin) amazonWarnings.push(`Seller SKU ${sku} has no ASIN in the report, so it is matched by SKU text — check it in Settings.`); });
 
     setProgress(88,'Assembling dashboard...');
 
@@ -2050,10 +2209,11 @@ async function processFiles(){
         hasOrdersFile: !!files.amzOrders,
       },
       amazonSkusDetected: Array.from(amazonSkusDetected),
+      amazonWarnings,
     };
+    invalidateRates();
 
     persistSettings();
-    if (GSHEET_DAILY) applyGSheetDailySalesToD(); // a connected sheet's longer history takes precedence over the freshly-uploaded Orders CSV
     saveSnapshotToStorage(D);
     buildSettingsUI();
     renderAll();
@@ -2082,33 +2242,129 @@ function todayISO(){ return new Date().toISOString().slice(0,10); }
 function snapshotDate(){ return D && D.asOf ? new Date(D.asOf+'T00:00:00') : new Date(); }
 function daysSinceSnapshot(){ return Math.max(0, Math.floor((new Date() - snapshotDate())/86400000)); }
 
-function shopifyVelocity(sku){
-  if (ORDER_BASED_SKUS.has(sku)) {
-    // one unit consumed per order, regardless of which mask(s) it contains — velocity is
-    // total order count over the order-date range, not any per-SKU quantity
-    if (!D.shopify.orderBasedTotal) return 0; // no Orders file uploaded yet — order-count data doesn't exist
-    return D.shopify.orderBasedTotal / D.shopify.orderBasedDayCount;
+// =========================================================================
+// VELOCITY — ONE definition, used by every number in the tool.
+//   window   : trailing 30 days of the loaded order history, ending on its last order date (shorter only if less history exists)
+//   Shopify  : units sold in the window / in-stock days in the window. A day the SKU was out of stock (zero sales that day, and
+//              marked out of stock) is left out of the divisor — no stock is not the same thing as no demand.
+//   Amazon   : the FBA report's own units-shipped-t30 / 30 (Amazon's trailing 30 days; it cannot exclude out-of-stock days)
+//   combined : Shopify + Amazon. Every per-SKU figure, the Dashboard headline and the reports all read this one function,
+//              so the per-SKU rates add up to the combined rate by construction.
+//   Thank You Cards: counted per ORDER (one card ships with each order), so their rate is orders/day, not units/day.
+//   Under 14 days of history (a launching SKU is measured from its first sale) there is no rate: "insufficient history".
+// =========================================================================
+const VELOCITY_WINDOW_DAYS = 30;
+const MIN_HISTORY_DAYS = 14;
+let RATE_CACHE = {};
+function invalidateRates(){ RATE_CACHE = {}; }
+function isoAdd(iso, n){ const d = new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function isoDiff(a, b){ return Math.round((new Date(b+'T00:00:00Z') - new Date(a+'T00:00:00Z'))/86400000); }
+// Days the SKU was out of stock: periods entered in Settings, plus days between consecutive saved uploads that both showed zero stock.
+function oosDates(sku){
+  const set = new Set();
+  ((SETTINGS.stockouts||{})[sku]||[]).forEach(per=>{
+    if (!per || !per.start) return;
+    const end = per.end || todayISO();
+    for (let d=per.start, n=0; d<=end && n<1500; d=isoAdd(d,1), n++) set.add(d);
+  });
+  const hist = (D && D.history ? D.history : loadHistory()).filter(h=>h && h.skus && h.skus[sku]).sort((a,b)=>String(a.asOf).localeCompare(String(b.asOf)));
+  for (let i=0;i<hist.length;i++){
+    if ((hist[i].skus[sku].onHand||0) > 0) continue;
+    set.add(hist[i].asOf);
+    const nx = hist[i+1];
+    if (nx && (nx.skus[sku].onHand||0) <= 0) for (let d=isoAdd(hist[i].asOf,1), n=0; d<nx.asOf && n<1500; d=isoAdd(d,1), n++) set.add(d);
   }
-  const units = D.shopify.skuUnits[sku]||0;
-  return units / D.shopify.dayCount;
+  return set;
 }
-function amazonVelocity(sku){
-  // sum velocity across any amazon SKU mapped to this master sku, using T30 shipped units
-  let total=0;
-  Object.entries(SETTINGS.amazonMapping).forEach(([amzSku, masterSku])=>{
-    if (masterSku===sku && D.amazon.fba[amzSku]) total += D.amazon.fba[amzSku].t30/30;
+function skuRate(sku){
+  if (RATE_CACHE[sku]) return RATE_CACHE[sku];
+  const cfg = (SETTINGS.skuConfig||{})[sku] || {};
+  const lifecycle = cfg.lifecycle || 'active';
+  const orderBased = ORDER_BASED_SKUS.has(sku);
+  const r = { sku, ok:false, reason:'', shop:0, amz:0, combined:0, unit: orderBased ? 'orders/day' : 'units/day',
+    windowStart:null, windowEnd:null, windowDays:0, inStockDays:0, excludedDays:0, historyDays:0, lowConfidence:false, windowUnits:0 };
+  const done = () => (RATE_CACHE[sku] = r);
+  const sh = D && D.shopify;
+  if (D && D.fromTeamSnapshot && D.publishedRates && D.publishedRates[sku]) {
+    // a team viewer has no order history of their own — use the rate the uploader computed, so everyone sees the same number
+    Object.assign(r, D.publishedRates[sku]);
+    if (r.ok) { r.amz = amazonQty(sku).t30/30; r.combined = r.shop + r.amz; }
+    return done();
+  }
+  const hMin = sh ? (orderBased ? sh.orderBasedMinDate : sh.minDate) : null;
+  const hMax = sh ? (orderBased ? sh.orderBasedMaxDate : sh.maxDate) : null;
+  if (!hMin || !hMax) { r.reason = 'no-sales-data'; return done(); }
+  const valueOn = d => orderBased ? ((sh.orderBasedDaily||{})[d]||0) : (((sh.dailyUnits||{})[d]||{})[sku]||0);
+  let hStart = hMin;
+  if (lifecycle === 'launching') {          // a launching SKU's clock starts at its first sale
+    hStart = null;
+    for (let d=hMin; d<=hMax; d=isoAdd(d,1)) { if (valueOn(d) > 0) { hStart = d; break; } }
+  }
+  r.windowEnd = hMax;
+  if (!hStart) { r.reason = 'insufficient'; return done(); }
+  r.historyDays = isoDiff(hStart, hMax) + 1;
+  if (r.historyDays < MIN_HISTORY_DAYS) { r.reason = 'insufficient'; return done(); }
+  const wStart = r.historyDays > VELOCITY_WINDOW_DAYS ? isoAdd(hMax, -(VELOCITY_WINDOW_DAYS-1)) : hStart;
+  r.windowStart = wStart; r.windowDays = isoDiff(wStart, hMax) + 1;
+  const oos = oosDates(sku);
+  let units = 0, excluded = 0, anySale = false;
+  for (let d=wStart; d<=hMax; d=isoAdd(d,1)) {
+    const v = valueOn(d);
+    if (v === 0 && oos.has(d)) { excluded++; continue; }
+    units += v; if (v > 0) anySale = true;
+  }
+  r.excludedDays = excluded; r.inStockDays = r.windowDays - excluded; r.windowUnits = units;
+  if (r.inStockDays <= 0) { r.reason = 'all-out-of-stock'; return done(); }
+  const aq = amazonQty(sku);
+  if (!orderBased && !anySale && !(aq.t30 > 0)) { r.reason = 'no-sales'; return done(); }   // never sold in the loaded history: no basis for a rate
+  r.lowConfidence = r.inStockDays < MIN_HISTORY_DAYS;
+  r.shop = units / r.inStockDays;
+  r.amz = aq.t30 / 30;
+  r.combined = r.shop + r.amz;
+  r.ok = true;
+  return done();
+}
+function shopifyVelocity(sku){ const r = skuRate(sku); return r.ok ? r.shop : 0; }
+function amazonVelocity(sku){ const r = skuRate(sku); return r.ok ? r.amz : 0; }
+
+// ---- Amazon: rows are matched to a product by ASIN (not by the seller-SKU text) ----
+function amazonMasterFor(amzSku, row){
+  const asin = row && row.asin;
+  if (asin) return SETTINGS.amazonAsinMapping[asin] || '';
+  return SETTINGS.amazonMapping[amzSku] || '';   // an old/odd report with no ASIN column: fall back to the saved seller-SKU mapping
+}
+function amazonRowsFor(sku){
+  if (!D || !D.amazon || !D.amazon.fba) return [];
+  return Object.entries(D.amazon.fba).filter(([a,f])=>amazonMasterFor(a,f)===sku).map(([a,f])=>({ amzSku:a, ...f }));
+}
+// Amazon quantity = available + fc-transfer + reserved + inbound-to-FBA - unfulfillable (the unfulfillable term can be switched off in Settings)
+function amazonQty(sku){
+  const q = { available:0, fcTransfer:0, reserved:0, inbound:0, unfulfillable:0, t7:0, t30:0, position:0, rows:amazonRowsFor(sku) };
+  q.rows.forEach(f=>{
+    q.available += f.available||0; q.fcTransfer += f.fcTransfer||0; q.reserved += f.reserved||0;
+    q.inbound += f.inbound||0; q.unfulfillable += f.unfulfillable||0; q.t7 += f.t7||0; q.t30 += f.t30||0;
   });
-  return total;
+  q.position = Math.max(0, q.available + q.fcTransfer + q.reserved + q.inbound - (SETTINGS.amazonSubtractUnfulfillable !== false ? q.unfulfillable : 0));
+  return q;
 }
-function amazonAvailable(sku){
-  let total=0;
-  Object.entries(SETTINGS.amazonMapping).forEach(([amzSku, masterSku])=>{
-    if (masterSku===sku && D.amazon.fba[amzSku]) total += D.amazon.fba[amzSku].available;
+function amazonAvailable(sku){ return amazonQty(sku).position; }
+function isOnAmazon(sku){ return amazonRowsFor(sku).length > 0; }
+// Every SKU carries an explicit Amazon state, so "not on Amazon" is distinguishable from "data is missing":
+//   listed (rows in the FBA report) · not-listed (marked not sold on Amazon in Settings) · missing (expected or unknown, but no rows)
+function amazonListing(sku){
+  if (isOnAmazon(sku)) return 'listed';
+  const c = (SETTINGS.skuConfig[sku]||{}).amazonListed;
+  return c === false ? 'not-listed' : 'missing';
+}
+// Amazon's own replenishment advice from the FBA report: recommended ship-in date/quantity, health status, low-inventory fee.
+function amazonReplenishment(sku){
+  const out = [];
+  amazonRowsFor(sku).forEach(f=>{
+    const date = f.recShipInDate ? normalizeDate(f.recShipInDate) : '';
+    const feeOn = /^y/i.test(f.lowFee||'');
+    if (date || f.recShipInQty || f.healthStatus || feeOn || f.recAction) out.push({ amzSku:f.amzSku, date, qty:f.recShipInQty||0, health:f.healthStatus||'', feeOn, action:f.recAction||'', alert:f.alert||'' });
   });
-  return total;
-}
-function isOnAmazon(sku){
-  return Object.entries(SETTINGS.amazonMapping).some(([amzSku,m])=>m===sku && D.amazon.fba[amzSku]);
+  return out;
 }
 function leadTimeDays(sku){
   const c = SETTINGS.skuConfig[sku];
@@ -2166,11 +2422,14 @@ function daysUntilDepleted(startDate, startStock, baseVel){
 }
 
 function computeBaseMetrics(sku){
-  const shopVel = shopifyVelocity(sku);
-  const amzVel = amazonVelocity(sku);
+  const rate = skuRate(sku);
+  const cfg = SETTINGS.skuConfig[sku];
+  const shopVel = rate.ok ? rate.shop : 0;
+  const amzVel = rate.ok ? rate.amz : 0;
   const combinedVel = shopVel + amzVel;
   const shopOnHand = (D.shopify.inv[sku]||{unreserved:0}).unreserved;
-  const amzOnHand = amazonAvailable(sku);
+  const aq = amazonQty(sku);
+  const amzOnHand = aq.position;
   const snapshotOnHand = shopOnHand + amzOnHand;
 
   // Project inventory forward from the report's snapshot date to today, using sales velocity —
@@ -2182,7 +2441,6 @@ function computeBaseMetrics(sku){
   const combinedOnHand = projectedOnHand + overdueTrackedQty(sku) + receivedNotYetReflectedQty(sku);
 
   const lt = leadTimeDays(sku);
-  const cfg = SETTINGS.skuConfig[sku];
   // China buffer stock — finished goods already produced but not yet shipped to a sellable warehouse.
   // Only available once connected via the ops workbook upload; 0 otherwise (not a gap, just unknown).
   const chinaStock = (CHINA_STOCK && CHINA_STOCK[sku]) ? CHINA_STOCK[sku].china : 0;
@@ -2194,12 +2452,12 @@ function computeBaseMetrics(sku){
   const usOnHandNow = combinedOnHand - amzOnHandNow;
   // An order-based SKU (Thank You Cards) with zero velocity almost never means "genuinely no demand" —
   // it means the order-count data isn't there yet (e.g. a resumed session saved before this SKU
-  // existed, or a Google Sheet connection that only ever knows the 5 masks). Flagging this explicitly
-  // stops that gap from silently reading as a real, calculated "0 units/day, all healthy."
+  // existed). Flagging this explicitly stops that gap from silently reading as "0 units/day, all healthy."
   const noVelocityData = ORDER_BASED_SKUS.has(sku) && !D.shopify.orderBasedTotal;
   return { sku, shopVel, amzVel, combinedVel, shopOnHand, amzOnHand, snapshotOnHand, combinedOnHand, daysStale,
     leadTime: lt, safetyDays: cfg.safetyDays, container: cfg.container, onAmazon: isOnAmazon(sku),
-    chinaStock, shipOnlyDays, noVelocityData, usOnHandNow, amzOnHandNow };
+    chinaStock, shipOnlyDays, noVelocityData, usOnHandNow, amzOnHandNow,
+    lifecycle: cfg.lifecycle || 'active', rate, aq, amzListing: amazonListing(sku) };
 }
 
 // 30-day vs 90-day velocity computed straight from whatever daily sales history is loaded (the
@@ -2222,10 +2480,11 @@ function velocityMomentum(sku){
   // 90-day windows are nearly the same days, so the ratio sits near 1.0 and could not show a real change either way.
   if (dates.length < (own ? 45 : 14)) return null; // not enough history for a meaningful comparison
   const valueOn = d => own ? (own[d]||0) : ((D.shopify.dailyUnits[d]||{})[sku]||0);
+  const oos = oosDates(sku);   // a zero-sale day while out of stock isn't "low demand" — leave it out, same as the velocity rate
   const sum = (days) => {
-    const slice = dates.slice(-days);
+    const slice = dates.slice(-days).filter(d=>!(valueOn(d)===0 && oos.has(d)));
     const total = slice.reduce((t,d)=> t + valueOn(d), 0);
-    return { avg: total/slice.length, days: slice.length };
+    return { avg: slice.length ? total/slice.length : 0, days: slice.length };
   };
   const d30 = sum(Math.min(30, dates.length));
   const d90 = sum(Math.min(90, dates.length));
@@ -2234,68 +2493,110 @@ function velocityMomentum(sku){
   return { avg30:d30.avg, avg90:d90.avg, momentum, trend, days90:d90.days };
 }
 
+// Shipments that are committed (in transit / delayed) and still ahead of us. Rows with no ETA can't be placed on a date, so they
+// are counted separately and flagged rather than silently ignored. Overdue rows are already inside on-hand (see overdueTrackedQty).
+function committedInbound(sku){
+  const today = todayISO();
+  const live = INBOUNDS.filter(r=>r.sku===sku && (r.status==='in transit' || r.status==='delayed'));
+  const dated = live.filter(r=>r.estDelivery && r.estDelivery >= today).sort((a,b)=>a.estDelivery.localeCompare(b.estDelivery));
+  const noEta = live.filter(r=>!r.estDelivery);
+  const datedQty = dated.reduce((t,r)=>t+r.qty,0), noEtaQty = noEta.reduce((t,r)=>t+r.qty,0);
+  return { events: dated.map(r=>({ date:r.estDelivery, qty:r.qty, po:r.poNumber, container:r.containerNumber })), rows: dated, datedQty, noEtaQty, noEtaRows: noEta, totalQty: datedQty + noEtaQty };
+}
+// Projected stockout: walk on-hand down at the (seasonal) sales rate, adding each committed shipment on its ETA. Returns the first
+// day stock reaches zero; `gap` is true when that happens BEFORE a later shipment lands (so that shipment doesn't prevent it).
+function projectStockout(onHand, vel, events){
+  const out = { date:null, days:Infinity, gap:false };
+  if (!(vel > 0)) return out;
+  const today = new Date(todayISO()+'T00:00:00');
+  const iso = t => new Date(t).toISOString().slice(0,10);
+  let stock = onHand, cursor = today;
+  for (const e of events) {
+    const ed = new Date(e.date+'T00:00:00');
+    if (ed <= cursor) { stock += e.qty; continue; }
+    const dEmpty = daysUntilDepleted(cursor, stock, vel);
+    const emptyAt = cursor.getTime() + dEmpty*86400000;
+    if (emptyAt < ed.getTime()) { out.days = (emptyAt - today.getTime())/86400000; out.date = iso(emptyAt); out.gap = true; return out; }
+    stock = Math.max(0, stock - demandOverSpan(cursor, (ed-cursor)/86400000, vel)) + e.qty;
+    cursor = ed;
+  }
+  const dEnd = daysUntilDepleted(cursor, stock, vel);
+  const totalDays = (cursor.getTime() - today.getTime())/86400000 + dEnd;
+  if (!isFinite(dEnd) || dEnd >= 1460) return out;          // won't run out within ~4 years
+  out.days = totalDays; out.date = iso(today.getTime() + totalDays*86400000);
+  return out;
+}
 function computeSkuMetrics(sku){
   const base = computeBaseMetrics(sku);
-  const { combinedVel, combinedOnHand, leadTime:lt, safetyDays, chinaStock, shipOnlyDays } = base;
+  const { combinedVel, combinedOnHand, leadTime:lt, safetyDays, chinaStock, shipOnlyDays, rate, lifecycle } = base;
+  const rateOk = rate.ok;
+  const todayStr = todayISO();
+  const todayD = new Date(todayStr+'T00:00:00');
+  const cfg = SETTINGS.skuConfig[sku];
 
   const seasonMult = seasonalityForWindow(lt); // kept for display/reference only
-  const daysOfSupply = daysUntilDepleted(new Date(), combinedOnHand, combinedVel); // "if nothing more arrives" runway — informational
+  // Days of supply = shelf stock only: on-hand ÷ sales rate (seasonality applied). It deliberately ignores inbound.
+  const daysOfSupply = rateOk ? daysUntilDepleted(new Date(), combinedOnHand, combinedVel) : NaN;
   const reorderPointDays = lt + safetyDays;
 
-  // The actual reorder status should account for what's ALREADY tracked as inbound, not just raw
-  // on-hand — otherwise a shipment that's already arriving in time gets flagged as urgent anyway,
-  // which is exactly the contradiction that showed up between the status badge and the inbound note.
-  // simulateForecast walks the known tracked pipeline forward and only proposes a NEW order once
-  // that pipeline actually runs dry, so its first "projected" entry is the true next action needed.
-  const { projected } = simulateForecast(sku, 200);
-  const today = new Date(todayISO()+'T00:00:00');
-  const nextNeeded = projected[0];
-  const orderDueInDays = nextNeeded ? Math.round((new Date(nextNeeded.orderDate+'T00:00:00') - today)/86400000) : null;
+  // Projected stockout drives status and reorder flags: on-hand walked down by the rate, each committed shipment added on its ETA.
+  const ci = committedInbound(sku);
+  const stockout = (rateOk && combinedVel > 0) ? projectStockout(combinedOnHand, combinedVel, ci.events) : { date:null, days:Infinity, gap:false };
+  const reorderByDate = stockout.date ? isoAdd(stockout.date, -Math.round(lt)) : '—';   // projected stockout minus lead time
+  const orderDueInDays = stockout.date ? isoDiff(todayStr, reorderByDate) : null;
 
-  let status = 'ok';
-  if (orderDueInDays !== null && orderDueInDays <= 0) status = 'now';
-  else if (orderDueInDays !== null && orderDueInDays <= safetyDays) status = 'soon';
-  if (combinedOnHand<=0 && combinedVel>0 && status!=='now') status = 'oos'; // already literally at zero right now, even if a shipment is inbound imminently
-  if (base.noVelocityData) status = 'nodata'; // overrides everything above — "healthy" would be a lie when we don't actually have demand data to check against
-
-  let reorderByDate = nextNeeded ? nextNeeded.orderDate : '—';
-  let overdueDays = (orderDueInDays!==null && orderDueInDays<0) ? -orderDueInDays : 0;
-
-  // Inbound coverage note — informational context alongside the status above, explaining WHY
-  // (e.g. "covered" means the tracked pipeline is exactly why status isn't worse than it is).
-  const manualInbound = computeInboundForSKU(sku);
-  let amzInboundQty = 0;
-  Object.entries(SETTINGS.amazonMapping).forEach(([a,m])=>{ if (m===sku && D.amazon.fba[a]) amzInboundQty += D.amazon.fba[a].inbound; });
-  const inboundQty = manualInbound.qty + amzInboundQty;
-  const inboundNextArrival = manualInbound.nextArrival; // Amazon FBA report gives no ETA, only a quantity
-  let inboundCoverage = 'none'; // 'none' | 'covered' | 'uncovered'
-  if (inboundQty > 0) {
-    if (inboundNextArrival && isFinite(daysOfSupply)) {
-      const stockoutDate = new Date(Date.now() + daysOfSupply*86400000);
-      inboundCoverage = new Date(inboundNextArrival) <= stockoutDate ? 'covered' : 'uncovered';
-    } else {
-      inboundCoverage = 'covered'; // has inbound units but no dated ETA (e.g. Amazon-only) — can't compare to stockout precisely
-    }
+  let status;
+  if (base.noVelocityData) status = 'nodata';          // "healthy" would be a lie when we don't actually have demand data
+  else if (lifecycle === 'discontinued') status = 'disc';
+  else if (!rateOk) status = 'insuf';
+  else {
+    status = 'ok';
+    if (orderDueInDays !== null && orderDueInDays <= 0) status = 'now';
+    else if (orderDueInDays !== null && orderDueInDays <= safetyDays) status = 'soon';
+    if (combinedOnHand <= 0 && combinedVel > 0 && status !== 'now') status = 'oos';
   }
+  const suppressed = status==='disc' || status==='insuf' || status==='nodata';
+  const overdueDays = (!suppressed && orderDueInDays !== null && orderDueInDays < 0) ? -orderDueInDays : 0;
 
-  // China buffer stock: a second, separate potential relief valve, informational only (doesn't change
-  // the status above) — "if requested today, would it arrive before the sellable stock runs out?"
-  let chinaBridge = 'none'; // 'none' | 'covered' | 'uncovered'
+  // Suggested order — derived, not a fixed container multiple:
+  //   net need = demand over the lead time + safety stock - (on-hand + everything already inbound)
+  // then rounded UP to whole containers (every PO is one full container). Zero when inbound already covers it.
+  let ltDemand = 0, safetyUnits = 0, suggestedNet = 0, suggestedContainers = 0, suggestedUnits = 0;
+  if (status==='now' || status==='soon' || status==='oos') {
+    ltDemand = demandOverSpan(todayD, lt, combinedVel);
+    safetyUnits = demandOverSpan(new Date(todayD.getTime()+lt*86400000), safetyDays, combinedVel);
+    suggestedNet = Math.max(0, Math.round(ltDemand + safetyUnits - (combinedOnHand + ci.totalQty)));
+    if (suggestedNet > 0 && cfg.container > 0) { suggestedContainers = Math.max(1, Math.ceil(suggestedNet / cfg.container)); suggestedUnits = suggestedContainers * cfg.container; }
+  }
+  // Discontinued: no reorder, just when the remaining stock (plus anything already inbound) is projected to sell through.
+  const sellThroughDate = (lifecycle==='discontinued' && stockout.date) ? stockout.date : null;
+  const daysToSellThrough = sellThroughDate ? stockout.days : null;
+
+  // Inbound coverage note — informational context alongside the status above.
+  const manualInbound = computeInboundForSKU(sku);
+  const amzInboundQty = base.aq.inbound; // already inside Amazon's quantity above — shown for visibility, never added twice
+  const inboundQty = manualInbound.qty;
+  const inboundNextArrival = manualInbound.nextArrival;
+  let inboundCoverage = 'none'; // 'none' | 'covered' | 'uncovered' | 'unknown'
+  if (inboundQty > 0) inboundCoverage = !rateOk ? 'unknown' : (stockout.gap ? 'uncovered' : 'covered');
+
+  // China buffer stock: informational only (doesn't change the status above).
+  let chinaBridge = 'none';
   let daysOfSupplyWithChina = daysOfSupply;
-  if (chinaStock > 0) {
+  if (chinaStock > 0 && rateOk) {
     chinaBridge = shipOnlyDays <= daysOfSupply ? 'covered' : 'uncovered';
     daysOfSupplyWithChina = daysUntilDepleted(new Date(), combinedOnHand + chinaStock, combinedVel);
   }
 
   const momentum = velocityMomentum(sku);
 
-  // Channel runway: each channel's own stock against its own sales pace. This is informational — the
-  // purchase decision (status above) still looks at the combined total because both channels are fed
-  // from the same orders.
+  // Channel runway: each channel's own stock against its own sales pace (informational).
   const now = new Date();
-  const usDaysOfSupply = daysUntilDepleted(now, base.usOnHandNow, base.shopVel);
-  const amzDaysOfSupply = base.onAmazon ? daysUntilDepleted(now, base.amzOnHandNow, base.amzVel) : null;
+  const usDaysOfSupply = rateOk ? daysUntilDepleted(now, base.usOnHandNow, base.shopVel) : NaN;
+  const amzDaysOfSupply = (base.onAmazon && rateOk) ? daysUntilDepleted(now, base.amzOnHandNow, base.amzVel) : (base.onAmazon ? NaN : null);
   function channelStatus(onHand, vel, dos){
+    if (lifecycle === 'discontinued') return 'disc';
+    if (!rateOk) return 'insuf';
     if (vel <= 0) return onHand > 0 ? 'ok' : 'na';
     if (onHand <= 0) return 'oos';
     return dos <= lt ? 'now' : dos <= reorderPointDays ? 'soon' : 'ok';
@@ -2306,7 +2607,11 @@ function computeSkuMetrics(sku){
   return { ...base, seasonMult, daysOfSupply, reorderPointDays, status, reorderByDate, overdueDays,
     inboundQty, inboundNextArrival, inboundCoverage, inboundRows: manualInbound.rows,
     chinaBridge, daysOfSupplyWithChina, momentum,
-    usDaysOfSupply, amzDaysOfSupply, usStatus, amzStatus, amzInboundQty };
+    usDaysOfSupply, amzDaysOfSupply, usStatus, amzStatus, amzInboundQty,
+    rateOk, stockoutDate: stockout.date, daysToStockout: stockout.days, stockoutGap: stockout.gap,
+    noEtaQty: ci.noEtaQty, committedInboundQty: ci.totalQty,
+    suggestedNet, suggestedContainers, suggestedUnits, ltDemand, safetyUnits, sellThroughDate, daysToSellThrough,
+    replenishment: amazonReplenishment(sku) };
 }
 
 function allSkuMetrics(){ return MASTER_SKUS.map(s=>computeSkuMetrics(s.code)); }
@@ -2315,14 +2620,16 @@ function allSkuMetrics(){ return MASTER_SKUS.map(s=>computeSkuMetrics(s.code)); 
 // =========================================================================
 // RENDER — shared helpers
 // =========================================================================
-function statusLabel(s){ return {now:'Reorder now',soon:'Reorder soon',ok:'Healthy',oos:'Out of stock',nodata:'No data',na:'Not sold'}[s]; }
+function statusLabel(s){ return {now:'Reorder now',soon:'Reorder soon',ok:'Healthy',oos:'Out of stock',nodata:'No data',na:'Not sold',disc:'Discontinued',insuf:'Insufficient history'}[s]; }
 function inboundCoverageLine(m){
-  if (m.inboundQty<=0) return `<div class="coverage-note none">No inbound shipments tracked for this SKU.</div>`;
+  const noEta = m.noEtaQty>0 ? `<div class="coverage-note uncovered">⚠ <b class="mono">${m.noEtaQty.toLocaleString('en-US')}</b> inbound units have <b>no ETA</b> — they are left out of the stockout projection until an arrival date is entered in Inbounds.</div>` : '';
+  if (m.inboundQty<=0) return `<div class="coverage-note none">${m.noEtaQty>0 ? 'No dated inbound shipments for this SKU.' : 'No inbound shipments tracked for this SKU.'}</div>${noEta}`;
   const qtyStr = `<b class="mono">${m.inboundQty.toLocaleString('en-US')}</b> units inbound`;
+  if (m.inboundCoverage==='unknown') return `<div class="coverage-note none">${qtyStr}, next arrival <b class="mono">${m.inboundNextArrival}</b>.</div>${noEta}`;
   if (m.inboundCoverage==='covered') {
-    return `<div class="coverage-note covered">✓ ${qtyStr}${m.inboundNextArrival?`, next arrival <b class="mono">${m.inboundNextArrival}</b> — before projected stockout`:''}.</div>`;
+    return `<div class="coverage-note covered">✓ ${qtyStr}${m.inboundNextArrival?`, next arrival <b class="mono">${m.inboundNextArrival}</b> — in time, no stockout before it lands`:''}.</div>${noEta}`;
   }
-  return `<div class="coverage-note uncovered">⚠ ${qtyStr}, next arrival <b class="mono">${m.inboundNextArrival}</b> — arrives after projected stockout. Still need to expedite or place another order.</div>`;
+  return `<div class="coverage-note uncovered">⚠ ${qtyStr}, next arrival <b class="mono">${m.inboundNextArrival}</b> — stock runs out <b class="mono">${m.stockoutDate}</b>, before it lands. Still need to expedite or place another order.</div>${noEta}`;
 }
 function chinaBridgeLine(m){
   if (m.chinaBridge==='none') return '';
@@ -2333,11 +2640,12 @@ function chinaBridgeLine(m){
   return `<div class="coverage-note uncovered">🏭 ${qtyStr}, but shipping takes ~${Math.round(m.shipOnlyDays)}d — longer than your remaining runway. Would need to expedite (air freight) to help with the immediate gap.</div>`;
 }
 function fmtNum(n){ if(!isFinite(n)) return '∞'; return Math.round(n).toLocaleString('en-US'); }
-function fmtDays(n){ if(!isFinite(n)) return '∞'; if (n>999) return '999+'; return Math.round(n).toLocaleString('en-US'); }
+function fmtDays(n){ if(n===null||Number.isNaN(n)) return 'n/a'; if(!isFinite(n)) return '∞'; if (n>999) return '999+'; return Math.round(n).toLocaleString('en-US'); }
 function skuName(code){ return (MASTER_SKUS.find(s=>s.code===code)||{}).name || code; }
 function skuColor(code){ return (MASTER_SKUS.find(s=>s.code===code)||{}).color || '#C6577A'; }
 
 function renderAll(){
+  invalidateRates();
   document.getElementById('asOfLabel').textContent = 'As of ' + D.asOf;
   renderCaveats();
   renderDashboard();
@@ -2365,7 +2673,7 @@ function renderCaveats(){
   }
   const noDataSkus = metrics.filter(m=>m.status==='nodata');
   if (noDataSkus.length) {
-    html += `<div class="caveat" style="background:#E4E1E8;border-color:#4A4152"><span>⚠️</span><div><b>${noDataSkus.map(m=>skuName(m.sku)).join(', ')}: status can't be calculated right now.</b> This SKU's velocity depends on order-count data that isn't in the current session — usually because a session was resumed from before this SKU was tracked, or because only a Google Sheet connection is active (it doesn't carry order-level data). Upload a fresh Shopify Orders file to fix this; don't trust the status shown until then.</div></div>`;
+    html += `<div class="caveat" style="background:#E4E1E8;border-color:#4A4152"><span>⚠️</span><div><b>${noDataSkus.map(m=>skuName(m.sku)).join(', ')}: status can't be calculated right now.</b> This SKU's velocity depends on order-count data that isn't in the current session — usually because a session was resumed from before this SKU was tracked. Upload a fresh Shopify Orders file to fix this; don't trust the status shown until then.</div></div>`;
   }
   if (daysStale>0) {
     const severity = daysStale > 30 ? 'todo' : daysStale > 14 ? 'warn' : 'info';
@@ -2373,16 +2681,21 @@ function renderCaveats(){
     const urgency = daysStale > 30 ? ' Projections this old are unreliable — please re-upload as soon as you can.' : daysStale > 14 ? ' Consider re-uploading soon — projections drift further from reality the longer this goes.' : '';
     html += `<div class="caveat ${cls}"><span>🕒</span><div><b>This data is ${daysStale} day${daysStale!==1?'s':''} old.</b> Snapshot taken ${D.asOf}. Inventory figures below are projected forward using each SKU's sales velocity — re-upload fresh exports whenever you have them for exact numbers instead of a projection.${urgency}</div></div>`;
   }
+  const insufSkus = metrics.filter(m=>m.status==='insuf');
+  if (insufSkus.length) html += `<div class="caveat" style="background:#F3ECF8;border-color:#7A5C99"><span>⏳</span><div><b>Insufficient history — ${insufSkus.map(m=>skuName(m.sku)).join(', ')}.</b> A velocity needs at least ${MIN_HISTORY_DAYS} days of sales, so no days of supply, stockout or reorder date is shown for ${insufSkus.length===1?'this SKU':'these SKUs'} yet (${insufSkus.map(m=>skuName(m.sku)+': '+insufDetail(m)).join('; ')}). Check each one's lifecycle in Settings: launching SKUs are timed from their first sale.</div></div>`;
+  const noEtaSkus = metrics.filter(m=>m.noEtaQty>0);
+  if (noEtaSkus.length) html += `<div class="caveat"><span>📅</span><div><b>Inbound with no arrival date:</b> ${noEtaSkus.map(m=>`${skuName(m.sku)} (${m.noEtaQty.toLocaleString('en-US')} units)`).join(', ')}. Without an ETA these units can't be placed on the timeline, so they are left out of projected stockout dates and reorder-by dates. Enter the ETA in the Inbounds tab.</div></div>`;
+  if (D.fromTeamSnapshot) html += `<div class="caveat"><span>👥</span><div><b>Read this before relying on dates:</b> sales rates, on-hand and Amazon figures come from the published snapshot, but inbound shipments, lifecycle, lead times, safety stock and seasonality are read from <b>this browser</b>, not from the person who published. Dates can differ from theirs until those are the same.</div></div>`;
+  if (!D.fromTeamSnapshot && D.shopify.dayCount < VELOCITY_WINDOW_DAYS) html += `<div class="caveat"><span>🗓️</span><div><b>Only ${D.shopify.dayCount} days of orders are loaded.</b> Velocity uses a trailing ${VELOCITY_WINDOW_DAYS}-day window, so with fewer days the rate rests on a shorter sample. Upload at least the last ${VELOCITY_WINDOW_DAYS} days of Shopify orders.</div></div>`;
   html += `<div class="caveat"><span>⚠️</span><div><b>Bundle sales aren't broken out.</b> Shopify orders include bundle SKUs (e.g. Glow Up Bundle, Glass Skin Bundle) that likely contain some of these masks but aren't counted toward individual mask velocity — roughly ${bundleTotal.toLocaleString('en-US')} bundle/other units were excluded from this period. Actual demand for bundled masks may be higher than shown.</div></div>`;
   if (D.shopify.cancelledCount>0) {
     html += `<div class="caveat info"><span>ℹ️</span><div><b>${D.shopify.cancelledCount.toLocaleString('en-US')} cancelled orders</b> were excluded from Shopify sales velocity, covering ${D.shopify.minDate} to ${D.shopify.maxDate} (${D.shopify.dayCount} days).</div></div>`;
   }
   document.getElementById('dashCaveats').innerHTML = html;
-  const sourceNote = D.shopify.gsheetConnected
-    ? `Sales velocity is calculated from the connected Daily Sales history — <b>${D.shopify.dayCount} days</b> (${D.shopify.minDate} to ${D.shopify.maxDate}).${salesDataStalenessNote()}`
-    : `Sales velocity is calculated over <b>${D.shopify.dayCount} days</b> (${D.shopify.minDate} to ${D.shopify.maxDate}) from the uploaded Orders file. Connect the Daily Sales history in Settings for a longer, more reliable window.`;
+  const rs = metrics.find(m=>m.rate && m.rate.windowStart);
+  const sourceNote = `Sales velocity uses one definition everywhere: the trailing <b>${VELOCITY_WINDOW_DAYS} days</b> of the uploaded Orders${rs?` (<b>${rs.rate.windowStart}</b> to <b>${rs.rate.windowEnd}</b>)`:''}, with days a SKU was out of stock left out of the divisor. Amazon uses Amazon's own 30-day shipped units. Thank You Cards are counted per order (orders/day). Under ${MIN_HISTORY_DAYS} days of history a SKU shows "insufficient history" instead of a number.${salesDataStalenessNote()}`;
   document.getElementById('shopifyCaveats').innerHTML = `<div class="caveat info"><span>ℹ️</span><div>${sourceNote}</div></div>`;
-  document.getElementById('amazonCaveats').innerHTML = `<div class="caveat info"><span>ℹ️</span><div>Amazon metrics use Amazon's own built-in velocity and days-of-supply numbers from the FBA report (snapshot: ${D.asOf}). FBM inventory levels aren't available from any uploaded report — only order history if you upload the All Orders file.</div></div>`;
+  document.getElementById('amazonCaveats').innerHTML = `<div class="caveat info"><span>ℹ️</span><div>Amazon velocity is the FBA report's units shipped in the last 30 days ÷ 30. Amazon quantity = available + FC transfer + reserved + inbound to FBA${SETTINGS.amazonSubtractUnfulfillable?' − unfulfillable':''} (snapshot: ${D.asOf}). Rows are matched by ASIN. Amazon out-of-stock days can't be excluded because the report only gives a 30-day total.</div></div>`;
 }
 
 // =========================================================================
@@ -2400,7 +2713,7 @@ const VC = { us:'#C6577A', amz:'#3D6E96', china:'#B3792F', jade:'#3E7D5C', amber
              ink:'#2B1F26', mid:'#5E4E58', dim:'#8B7B84', line:'#E2D4CC', grid:'#F0E7E2', track:'#F7EEEA', grey:'#9A90A4', na:'#D9CFCB' };
 const SKU_COLORS = ['#C6577A', '#3D6E96', '#B3792F', '#3E7D5C', '#8B6BB0', '#2A9D8F'];
 const svgEsc = t => String(t==null ? '' : t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const statusColor = st => ({now:VC.red, soon:VC.amber, ok:VC.jade, oos:VC.dark, nodata:VC.grey, na:VC.na}[st] || VC.grey);
+const statusColor = st => ({now:VC.red, soon:VC.amber, ok:VC.jade, oos:VC.dark, nodata:VC.grey, na:VC.na, disc:VC.grey, insuf:VC.grey}[st] || VC.grey);
 const clip = (t, n) => { t = String(t==null?'':t); return t.length>n ? t.slice(0,n-1)+'…' : t; };
 function niceMax(v){
   if (!(v>0) || !isFinite(v)) return 1;
@@ -2482,14 +2795,15 @@ function runwayChartSVG(items){
     const w = dos===Infinity ? bw : Math.min(bw, (dos/domain)*bw);
     const capped = dos===Infinity || dos > domain;
     let bar = `<rect x="${x0}" y="${cy-8}" width="${bw}" height="16" rx="8" fill="${VC.track}"/>`;
-    if (it.status !== 'nodata' && it.status !== 'na' && w > 0) bar += `<rect x="${x0}" y="${cy-8}" width="${Math.max(w, 8).toFixed(1)}" height="16" rx="8" fill="${col}"/>`;
-    if (capped && it.status !== 'nodata' && it.status !== 'na') bar += `<polygon points="${x0+bw-16},${cy-4} ${x0+bw-9},${cy} ${x0+bw-16},${cy+4}" fill="#fff" fill-opacity=".9"/>`;
+    const noBar = it.status==='nodata' || it.status==='na' || it.status==='insuf' || it.status==='disc';
+    if (!noBar && w > 0) bar += `<rect x="${x0}" y="${cy-8}" width="${Math.max(w, 8).toFixed(1)}" height="16" rx="8" fill="${col}"/>`;
+    if (capped && !noBar) bar += `<polygon points="${x0+bw-16},${cy-4} ${x0+bw-9},${cy} ${x0+bw-16},${cy+4}" fill="#fff" fill-opacity=".9"/>`;
     const marks = (it.lead>0 ? `<line x1="${X(it.lead)}" y1="${cy-13}" x2="${X(it.lead)}" y2="${cy+13}" stroke="${VC.ink}" stroke-width="2"/>` : '')
                 + (it.rp>0 && Math.abs(it.rp-it.lead)>=1 ? `<line x1="${X(it.rp)}" y1="${cy-13}" x2="${X(it.rp)}" y2="${cy+13}" stroke="${VC.amber}" stroke-width="2" stroke-dasharray="3 2"/>` : '');
-    const val = it.status==='nodata' ? 'no data' : it.status==='na' ? 'not sold' : (dos===Infinity ? '∞' : dayTxt(dos));
+    const val = it.status==='nodata' ? 'no data' : it.status==='na' ? 'not sold' : it.status==='insuf' ? 'n/a' : it.status==='disc' ? 'disc.' : (dos===Infinity ? '∞' : dayTxt(dos));
     return `<text x="0" y="${cy+4}" font-size="13" font-weight="600" fill="${VC.ink}" font-family="Inter, sans-serif">${svgEsc(clip(it.label, 22))}</text>`
       + bar + marks
-      + `<text x="${W}" y="${cy-1}" text-anchor="end" font-size="14" font-weight="600" fill="${it.status==='nodata'||it.status==='na' ? VC.dim : col}" font-family="IBM Plex Mono, monospace">${svgEsc(val)}</text>`
+      + `<text x="${W}" y="${cy-1}" text-anchor="end" font-size="14" font-weight="600" fill="${noBar ? VC.dim : col}" font-family="IBM Plex Mono, monospace">${svgEsc(val)}</text>`
       + (it.note ? `<text x="${W}" y="${cy+13}" text-anchor="end" font-size="10.5" fill="${VC.dim}" font-family="Inter, sans-serif">${svgEsc(clip(it.note, 30))}</text>` : '');
   }).join('');
   return `<svg class="wide" viewBox="0 0 ${W} ${H}" role="img" aria-label="Days of supply by SKU">${g}${legend}${rows}</svg>`;
@@ -2560,16 +2874,55 @@ const SCOPE_NOTE = {
   us:  'Stock at the US 3PL against Shopify sales pace. New containers and the China buffer feed this side.',
   amz: 'Amazon FBA stock against Amazon\u2019s 30-day sales pace, from the FBA report.',
 };
-const runwayLabel = st => ({now:'Low runway', soon:'Watch', ok:'Healthy', oos:'Out of stock', nodata:'No data', na:'Not sold'}[st] || st);
+const runwayLabel = st => ({now:'Low runway', soon:'Watch', ok:'Healthy', oos:'Out of stock', nodata:'No data', na:'Not sold', disc:'Discontinued', insuf:'Insufficient history'}[st] || st);
 function kpiCard(label, value, sub, cls, extra){
   return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value ${cls||''}">${value}</div><div class="kpi-sub">${sub}</div>${extra||''}</div>`;
 }
 const velSpark = () => { const ser = totalDailySeries(30); const sv = sparklineSVG(ser, VC.us); return ser.length>=7 && sv ? `<div class="kpi-extra"><span class="spark-label">US sales · last ${ser.length} days</span>${sv}</div>` : ''; };
 const isLowStatus = st => st==='now' || st==='oos' || st==='nodata';
+const REASON_TEXT = { 'insufficient':'under 14 days of sales history', 'no-sales':'no sales recorded in the loaded history', 'no-sales-data':'no Orders file is loaded', 'all-out-of-stock':'the SKU was out of stock for the whole window' };
+function insufDetail(m){
+  const r = m.rate || {};
+  return (r.reason==='insufficient' && r.historyDays>0) ? `only ${r.historyDays} day${r.historyDays!==1?'s':''} of sales history` : (REASON_TEXT[r.reason] || 'not enough sales history');
+}
+// How the order is sized — shown so the number can be checked: demand over the lead time + safety stock - (on-hand + inbound), in whole containers.
+function suggestionHtml(m){
+  if (m.suggestedNet > 0) {
+    const tip = `demand over lead time ${fmtNum(m.ltDemand)} + safety stock ${fmtNum(m.safetyUnits)} − on-hand ${fmtNum(m.combinedOnHand)} − inbound ${fmtNum(m.committedInboundQty)} = ${fmtNum(m.suggestedNet)} units`;
+    return `suggested <b class="mono" title="${tip}">${m.suggestedContainers} container${m.suggestedContainers!==1?'s':''}</b> (${m.suggestedUnits.toLocaleString('en-US')} units · net need ${m.suggestedNet.toLocaleString('en-US')})`;
+  }
+  return `no new order needed for the lead-time demand — inbound already covers it`;
+}
 function poActionHtml(m){
-  return m.status==='nodata' ? `<div class="alert-action" style="color:var(--ink-mid)">⚠️ Can't calculate — order-count data is missing for this SKU (needs a fresh Orders file upload, not just a resumed session or Google Sheet connection). Status shown is not a real reading.</div>`
-    : (m.status==='now'||m.status==='oos') ? `<div class="alert-action">📦 ${m.overdueDays>0 ? `Overdue by <b class="mono">${m.overdueDays}d</b> — place PO now` : 'Place PO now'} — suggested qty <b class="mono">${m.container.toLocaleString('en-US')}</b> (1 container)</div>`
-    : m.status==='soon' ? `<div class="alert-action">⏳ Reorder by <b class="mono">${m.reorderByDate}</b></div>` : '';
+  if (m.status==='nodata') return `<div class="alert-action" style="color:var(--ink-mid)">⚠️ Can't calculate — order-count data is missing for this SKU (needs a fresh Orders file upload, not just a resumed session). Status shown is not a real reading.</div>`;
+  if (m.status==='disc') return `<div class="alert-action" style="color:var(--ink-mid)">🏁 Discontinued — no reorder. ${m.sellThroughDate ? `Remaining stock${m.committedInboundQty>0?' plus inbound':''} projected to sell through by <b class="mono">${m.sellThroughDate}</b> (~${fmtDays(m.daysToSellThrough)}d).` : (m.rateOk ? 'No sales at the current rate, so no sell-through date.' : `No sell-through date yet: ${insufDetail(m)}.`)}</div>`;
+  if (m.status==='insuf') return `<div class="alert-action" style="color:#7A5C99">⏳ Insufficient history — ${insufDetail(m)}. No days of supply or reorder date is shown until there are at least 14 days of sales.</div>`;
+  if (m.status==='now'||m.status==='oos') return `<div class="alert-action">📦 ${m.overdueDays>0 ? `Overdue by <b class="mono">${m.overdueDays}d</b> — place PO now` : 'Place PO now'} — ${suggestionHtml(m)}</div>`;
+  if (m.status==='soon') return `<div class="alert-action">⏳ Reorder by <b class="mono">${m.reorderByDate}</b> — ${suggestionHtml(m)}</div>`;
+  return '';
+}
+function stockoutText(m){
+  if (m.status==='disc') return m.sellThroughDate ? `sells through ${m.sellThroughDate}` : (m.rateOk ? 'no sales' : 'n/a');
+  if (!m.rateOk) return 'n/a';
+  if (!(m.combinedVel>0)) return m.combinedOnHand>0 ? 'no sales' : 'now';
+  if (!m.stockoutDate) return 'none in 4+ years';
+  return `${m.stockoutDate} (${fmtDays(m.daysToStockout)}d)${m.stockoutGap?' ⚠':''}`;
+}
+function rateNoteHtml(m){
+  const r = m.rate || {};
+  if (!r.ok) return `<div class="coverage-note none">Insufficient history — ${insufDetail(m)}.</div>`;
+  return `<div class="coverage-note none" style="font-size:11px">${r.windowDays}-day window ${r.windowStart} → ${r.windowEnd}${r.excludedDays>0?` · ${r.excludedDays} out-of-stock day${r.excludedDays!==1?'s':''} left out`:''}${r.lowConfidence?' · ⚠ few in-stock days, low confidence':''}${m.sku && ORDER_BASED_SKUS.has(m.sku)?' · counted per order':''}</div>`;
+}
+function amzReplLine(m){
+  if (!m.onAmazon || !m.replenishment || !m.replenishment.length) return '';
+  const lines = m.replenishment.map(x=>{
+    const bits = [];
+    if (x.date) bits.push(`ship in by <b class="mono">${x.date}</b>${x.qty?` (qty <b class="mono">${x.qty.toLocaleString('en-US')}</b>)`:''}`);
+    if (x.health) bits.push(svgEsc(x.health));
+    if (x.feeOn) bits.push('<b style="color:var(--red)">low-inventory-level fee applies this week</b>');
+    return bits.length ? `<div class="alert-action" style="color:#7A3B1C">🅰 Amazon replenishment${m.replenishment.length>1?' ('+svgEsc(x.amzSku)+')':''}: ${bits.join(' · ')}</div>` : '';
+  }).join('');
+  return lines;
 }
 function splitBar(m){
   const us = Math.max(0, m.usOnHandNow), az = m.onAmazon ? Math.max(0, m.amzOnHandNow) : 0, tot = us + az;
@@ -2597,7 +2950,7 @@ function alertCardHtml(m, scope){
     const warn = m.usStatus==='oos' ? `<div class="alert-action">The 3PL is out of stock.</div>`
       : m.usStatus==='now' ? `<div class="alert-action">US stock lasts about <b class="mono">${fmtDays(m.usDaysOfSupply)}d</b> — shorter than the <b class="mono">${Math.round(m.leadTime)}d</b> lead time.</div>` : '';
     return `<div class="alert-card status-${st}">${head}
-      <div class="alert-row"><span>Velocity (Shopify)</span><b>${m.shopVel.toFixed(1)}/day</b></div>
+      <div class="alert-row"><span>Velocity (Shopify)</span><b>${m.rateOk ? m.shopVel.toFixed(1)+'/day' : 'n/a'}</b></div>
       ${sparkBlock(m.sku, 'Daily sales')}
       <div class="alert-row"><span>On-hand (3PL)</span><b>${fmtNum(m.usOnHandNow)}</b></div>
       <div class="alert-row"><span>Days of supply</span><b>${fmtDays(m.usDaysOfSupply)}</b></div>
@@ -2608,25 +2961,27 @@ function alertCardHtml(m, scope){
     const warn = m.amzStatus==='na' ? '' : (m.amzStatus==='now'||m.amzStatus==='soon'||m.amzStatus==='oos')
       ? `<div class="alert-action">${m.amzStatus==='oos' ? 'FBA is out of stock.' : `FBA stock lasts about <b class="mono">${fmtDays(m.amzDaysOfSupply)}d</b>.`} The US 3PL currently holds <b class="mono">${fmtNum(m.usOnHandNow)}</b> units.</div>` : '';
     return `<div class="alert-card status-${st}">${head}
-      <div class="alert-row"><span>Velocity (T30)</span><b>${m.amzVel.toFixed(1)}/day</b></div>
+      <div class="alert-row"><span>Velocity (T30)</span><b>${m.rateOk ? m.amzVel.toFixed(1)+'/day' : 'n/a'}</b></div>
       ${amzPaceHTML(m.sku)}
       <div class="alert-row"><span>FBA on-hand</span><b>${fmtNum(m.amzOnHandNow)}</b></div>
       <div class="alert-row"><span>FBA inbound</span><b>${fmtNum(m.amzInboundQty||0)}</b></div>
       <div class="alert-row"><span>Days of supply</span><b>${fmtDays(m.amzDaysOfSupply)}</b></div>
-      ${poStatusRow(m)}${warn}</div>`;
+      ${poStatusRow(m)}${warn}${amzReplLine(m)}</div>`;
   }
   return `<div class="alert-card status-${st}">${head}
-      <div class="alert-row"><span>Velocity</span><b>${m.combinedVel.toFixed(1)}/day</b></div>
+      <div class="alert-row"><span>Velocity</span><b>${m.rateOk ? m.combinedVel.toFixed(1)+' '+m.rate.unit.replace('units/day','/day') : 'n/a'}</b></div>
+      ${rateNoteHtml(m)}
       ${sparkBlock(m.sku, 'US daily sales')}
       <div class="alert-row"><span>On-hand</span><b>${fmtNum(m.combinedOnHand)}</b></div>
       ${splitBar(m)}
-      <div class="alert-row"><span>Days of supply</span><b>${fmtDays(m.daysOfSupply)}</b></div>
+      <div class="alert-row"><span>Days of supply <small style="color:var(--ink-dim)">(on-hand only)</small></span><b>${fmtDays(m.daysOfSupply)}</b></div>
+      <div class="alert-row"><span>${m.status==='disc'?'Projected sell-through':'Projected stockout'} <small style="color:var(--ink-dim)">(with inbound)</small></span><b>${stockoutText(m)}</b></div>
       <div class="alert-row"><span>Lead time</span><b>${Math.round(m.leadTime)}d</b></div>
-      ${poActionHtml(m)}${channelFlagHtml(m)}${inboundCoverageLine(m)}${chinaBridgeLine(m)}</div>`;
+      ${poActionHtml(m)}${channelFlagHtml(m)}${amzReplLine(m)}${inboundCoverageLine(m)}${chinaBridgeLine(m)}</div>`;
 }
 const chSub = (u, a, onAmz) => `<span class="sub"><span class="ch-us">US</span> ${u} · <span class="ch-amz">AMZ</span> ${onAmz ? a : '—'}</span>`;
 function dashTable(scope, metrics){
-  const dosCls = st => st==='now'||st==='oos'||st==='nodata' ? 'red' : st==='soon' ? 'amber' : 'jade';
+  const dosCls = st => st==='now'||st==='oos'||st==='nodata' ? 'red' : st==='soon' ? 'amber' : (st==='disc'||st==='insuf') ? 'dim' : 'jade';
   const pill = st => `<span class="badge-pill status-${st}">${statusLabel(st)}</span>`;
   const runwayPill = st => `<span class="badge-pill status-${st}">${runwayLabel(st)}</span>`;
   const inboundCell = m => m.inboundQty>0 ? `<span class="num ${m.inboundCoverage==='covered'?'jade':'red'}">${m.inboundQty.toLocaleString('en-US')}</span>${m.inboundNextArrival?`<span class="sub">by ${m.inboundNextArrival}</span>`:''}` : `<span class="num dim">—</span>`;
@@ -2648,15 +3003,28 @@ function dashTable(scope, metrics){
       <td><span class="num ${dosCls(m.amzStatus)}">${fmtDays(m.amzDaysOfSupply)}</span></td>
       <td>${runwayPill(m.amzStatus)}</td><td>${pill(m.status)}</td>
       <td><span class="num dim">${fmtNum(m.usOnHandNow)}</span></td></tr>`).join('') };
+  const velCell = m => m.rateOk ? `<span class="num big">${m.combinedVel.toFixed(1)}</span>${chSub(m.shopVel.toFixed(1), m.amzVel.toFixed(1), m.onAmazon)}` : `<span class="num dim">n/a</span><span class="sub">insufficient history</span>`;
+  const suggestCell = m => {
+    if (m.status==='nodata') return `<span class="num dim">no data</span>`;
+    if (m.status==='disc') return `<span class="num dim">none</span><span class="sub">discontinued</span>`;
+    if (m.status==='insuf') return `<span class="num dim">—</span>`;
+    if (m.status==='now'||m.status==='oos'||m.status==='soon') return m.suggestedNet>0 ? `<span class="num" title="net need ${m.suggestedNet.toLocaleString('en-US')} units">${m.suggestedContainers} × container</span><span class="sub">${m.suggestedUnits.toLocaleString('en-US')} units</span>` : `<span class="num dim">covered</span><span class="sub">by inbound</span>`;
+    return `<span class="num dim">—</span>`;
+  };
+  const reorderCell = m => {
+    if (m.status==='disc'||m.status==='insuf'||m.status==='nodata') return `<span class="num dim">—</span>`;
+    return (m.overdueDays>0 ? `<span class="num red">Overdue ${m.overdueDays}d</span>` : `<span class="num">${m.reorderByDate}</span>`) + `<span class="sub">lead time ${Math.round(m.leadTime)}d</span>`;
+  };
   return {
-    head: '<th>SKU</th><th>Velocity / day</th><th>On-hand</th><th>Days of supply</th><th>Reorder-by</th><th>Status</th><th>Suggested order</th><th>Inbound</th>',
+    head: '<th>SKU</th><th>Velocity / day</th><th>On-hand</th><th>Days of supply<br><small>on-hand only</small></th><th>Projected stockout<br><small>incl. inbound</small></th><th>Reorder-by</th><th>Status</th><th>Suggested order</th><th>Inbound</th>',
     rows: metrics.map(m=>`<tr>${nameCell(m)}
-      <td><span class="num big">${m.combinedVel.toFixed(1)}</span>${chSub(m.shopVel.toFixed(1), m.amzVel.toFixed(1), m.onAmazon)}</td>
+      <td>${velCell(m)}</td>
       <td><span class="num big">${fmtNum(m.combinedOnHand)}</span>${chSub(fmtNum(m.usOnHandNow), fmtNum(m.amzOnHandNow), m.onAmazon)}</td>
-      <td><span class="num ${dosCls(m.status)}">${fmtDays(m.daysOfSupply)}</span>${chSub(fmtDays(m.usDaysOfSupply)+'d', m.onAmazon?fmtDays(m.amzDaysOfSupply)+'d':'', m.onAmazon)}</td>
-      <td>${m.overdueDays>0 ? `<span class="num red">Overdue ${m.overdueDays}d</span>` : `<span class="num">${m.reorderByDate}</span>`}<span class="sub">lead time ${Math.round(m.leadTime)}d</span></td>
+      <td><span class="num ${dosCls(m.status)}">${fmtDays(m.daysOfSupply)}</span>${m.rateOk?chSub(fmtDays(m.usDaysOfSupply)+'d', m.onAmazon?fmtDays(m.amzDaysOfSupply)+'d':'', m.onAmazon):''}</td>
+      <td><span class="num ${m.status==='disc'||m.status==='insuf'?'dim':m.stockoutGap?'red':''}">${stockoutText(m)}</span></td>
+      <td>${reorderCell(m)}</td>
       <td>${pill(m.status)}</td>
-      <td>${m.status==='nodata' ? `<span class="num dim">no data</span>` : (m.status==='now'||m.status==='oos'||m.status==='soon') ? `<span class="num">${m.container.toLocaleString('en-US')}</span>` : `<span class="num dim">—</span>`}</td>
+      <td>${suggestCell(m)}</td>
       <td>${inboundCell(m)}</td></tr>`).join('') };
 }
 function renderDashboard(){
@@ -2693,11 +3061,11 @@ function renderDashboard(){
     const totalVel = prod.reduce((t,m)=>t+m.combinedVel,0), totalOnHand = prod.reduce((t,m)=>t+m.combinedOnHand,0);
     const usTot = prod.reduce((t,m)=>t+m.usOnHandNow,0), azTot = prod.reduce((t,m)=>t+m.amzOnHandNow,0);
     const reorderNow = all.filter(m=>m.status==='now'||m.status==='oos'||m.status==='nodata').length;
-    const soonest = all.filter(m=>isFinite(m.daysOfSupply)).sort((a,b)=>a.daysOfSupply-b.daysOfSupply)[0];
-    kpis = kpiCard('Combined sales velocity', totalVel.toFixed(1), `units/day · ${PRODUCT_SKU_COUNT} product SKUs, both channels`, '', velSpark())
+    const soonest = all.filter(m=>m.stockoutDate && (m.status==='now'||m.status==='soon'||m.status==='ok'||m.status==='oos')).sort((a,b)=>a.reorderByDate.localeCompare(b.reorderByDate))[0];
+    kpis = kpiCard('Combined sales velocity', totalVel.toFixed(1), `units/day · trailing 30 days · sum of the ${prod.filter(m=>m.rateOk).length} SKU rates below${prod.some(m=>!m.rateOk)?' (insufficient-history SKUs excluded)':''}`, '', velSpark())
          + kpiCard('Total on-hand inventory', fmtNum(totalOnHand), `<span class="ch-us">US ${fmtNum(usTot)}</span> · <span class="ch-amz">Amazon ${fmtNum(azTot)}</span>`, '', miniSplitBar([{v:usTot,color:VC.us},{v:azTot,color:VC.amz}]))
-         + kpiCard('SKUs needing reorder', reorderNow, `of ${all.length} total SKUs`, reorderNow>0?'red':'jade')
-         + kpiCard('Next reorder due', soonest ? skuName(soonest.sku) : '—', soonest ? (soonest.overdueDays>0 ? 'overdue by '+soonest.overdueDays+'d' : 'by '+soonest.reorderByDate) : 'no data', soonest && soonest.status!=='ok' ? 'amber' : '');
+         + kpiCard('SKUs needing reorder', reorderNow, `of ${all.filter(m=>m.status!=='disc').length} active SKUs · ${all.filter(m=>m.status==='disc').length} discontinued`, reorderNow>0?'red':'jade')
+         + kpiCard('Next reorder due', soonest ? skuName(soonest.sku) : '—', soonest ? (soonest.overdueDays>0 ? 'overdue by '+soonest.overdueDays+'d' : 'by '+soonest.reorderByDate) : 'nothing due', soonest && soonest.status!=='ok' ? 'amber' : '');
     alertSub = `${reorderNow} SKU${reorderNow!==1?'s':''} need attention right now`;
     alertTitle = 'Reorder alerts — all SKUs'; tableTitle = 'SKU overview — all channels';
     tableSub = 'Totals first, with the US 3PL and Amazon FBA split underneath';
@@ -2719,12 +3087,12 @@ function renderRunwayPanel(scope, metrics){
   const items = metrics.map(m=>{
     if (scope==='us')  return { label:skuName(m.sku), dos:m.usDaysOfSupply,  lead:m.leadTime, rp:m.reorderPointDays, status:m.usStatus };
     if (scope==='amz') return { label:skuName(m.sku), dos:m.amzDaysOfSupply, lead:m.leadTime, rp:m.reorderPointDays, status:m.amzStatus };
-    const covered = m.inboundQty>0 && m.inboundCoverage==='covered' && m.daysOfSupply<=m.leadTime;
-    return { label:skuName(m.sku), dos:m.daysOfSupply, lead:m.leadTime, rp:m.reorderPointDays, status:m.status, note: m.status==='nodata' ? '' : covered ? 'inbound covers the gap' : '' };
+    const withInbound = m.inboundQty>0 && m.inboundCoverage==='covered' && m.daysOfSupply<=m.leadTime;
+    return { label:skuName(m.sku), dos:m.daysToStockout, lead:m.leadTime, rp:m.reorderPointDays, status:m.status, note: m.status==='disc' ? (m.sellThroughDate?'sells through '+m.sellThroughDate:'discontinued') : m.status==='insuf' ? 'insufficient history' : m.stockoutGap ? 'runs out before inbound' : withInbound ? 'inbound covers the gap' : '' };
   });
   document.getElementById('runwayTitle').textContent = scope==='us' ? 'US · 3PL runway at a glance' : scope==='amz' ? 'Amazon · FBA runway at a glance' : 'Runway at a glance';
   document.getElementById('runwaySub').textContent = scope==='all'
-    ? 'Days of supply at current sales pace. A bar that ends before the lead-time marker needs new stock to land first.'
+    ? 'Days until projected stockout at the current sales pace, counting each committed shipment on its ETA. A bar that ends before the lead-time marker needs a new order placed now.'
     : 'Days of stock left at this channel\u2019s own sales pace (inbound not counted).';
   const lab = scope==='all' ? ['Healthy','Reorder soon','Reorder now'] : ['Healthy','Watch','Low runway'];
   document.getElementById('runwayLegend').innerHTML = `<span><i style="background:${VC.jade}"></i>${lab[0]}</span><span><i style="background:${VC.amber}"></i>${lab[1]}</span><span><i style="background:${VC.red}"></i>${lab[2]}</span><span><i style="background:${VC.dark}"></i>Out of stock</span>`;
@@ -2762,7 +3130,7 @@ function renderShopify(){
   document.getElementById('b-shopify').textContent = MASTER_SKUS.length;
   document.getElementById('shopKpiGrid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Orders in period</div><div class="kpi-value">${totalOrders.toLocaleString('en-US')}</div><div class="kpi-sub">${D.shopify.dayCount} days · ${D.shopify.minDate} to ${D.shopify.maxDate}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Units sold (product SKUs)</div><div class="kpi-value">${totalUnits.toLocaleString('en-US')}</div><div class="kpi-sub">${(totalUnits/D.shopify.dayCount).toFixed(1)}/day combined</div></div>
+    <div class="kpi-card"><div class="kpi-label">Units sold (product SKUs)</div><div class="kpi-value">${totalUnits.toLocaleString('en-US')}</div><div class="kpi-sub">in the ${D.shopify.dayCount} loaded days · 30-day rate ${metrics.filter(m=>isProductSku(m.sku)).reduce((t,m)=>t+m.shopVel,0).toFixed(1)}/day (sum of the SKU rates)</div></div>
     <div class="kpi-card"><div class="kpi-label">Cancelled orders</div><div class="kpi-value">${D.shopify.cancelledCount.toLocaleString('en-US')}</div><div class="kpi-sub">excluded from velocity</div></div>
     <div class="kpi-card"><div class="kpi-label">Total on-hand</div><div class="kpi-value jade">${fmtNum(metrics.filter(m=>isProductSku(m.sku)).reduce((s,m)=>s+m.shopOnHand,0))}</div><div class="kpi-sub">Doral Warehouse, unreserved</div></div>
   `;
@@ -2781,12 +3149,12 @@ function renderShopify(){
     const orders = (D.shopify.skuOrders[m.sku]||new Set()).size;
     const units = D.shopify.skuUnits[m.sku]||0;
     const inv = D.shopify.inv[m.sku]||{onHand:0,committed:0,unreserved:0};
-    const shopDaysOfSupply = m.shopVel>0 ? inv.unreserved/m.shopVel : (inv.unreserved>0?Infinity:0);
+    const shopDaysOfSupply = !m.rateOk ? NaN : m.shopVel>0 ? inv.unreserved/m.shopVel : (inv.unreserved>0?Infinity:0);
     return `<tr>
       <td><span class="sku-name">${skuName(m.sku)}</span><br><span class="sku-code">${m.sku}</span></td>
       <td><span class="num big">${units.toLocaleString('en-US')}</span>${ORDER_BASED_SKUS.has(m.sku)?'<span class="sub">orders</span>':''}</td>
       <td><span class="num">${orders.toLocaleString('en-US')}</span></td>
-      <td><span class="num">${m.shopVel.toFixed(1)}</span></td>
+      <td><span class="num">${m.rateOk ? m.shopVel.toFixed(1) : 'n/a'}</span></td>
       <td><span class="num">${inv.unreserved.toLocaleString('en-US')}</span></td>
       <td><span class="num dim">${inv.committed.toLocaleString('en-US')}</span></td>
       <td><span class="num">${fmtDays(shopDaysOfSupply)}</span></td>
@@ -2804,38 +3172,44 @@ function renderAmazon(){
   document.getElementById('b-amazon').textContent = onAmazonSkus.length;
 
   const totalAvail = onAmazonSkus.reduce((s,sk)=>s+amazonAvailable(sk.code),0);
-  const totalT30 = Object.values(D.amazon.fba).reduce((s,f)=>s+f.t30,0);
+  const totalT30 = onAmazonSkus.reduce((s,sk)=>s+amazonQty(sk.code).t30,0);
   const oosCount = onAmazonSkus.filter(s=>amazonAvailable(s.code)<=0).length;
 
   document.getElementById('amzKpiGrid').innerHTML = `
     <div class="kpi-card"><div class="kpi-label">SKUs sold on Amazon</div><div class="kpi-value">${onAmazonSkus.length}</div><div class="kpi-sub">of ${MASTER_SKUS.length} total SKUs</div></div>
-    <div class="kpi-card"><div class="kpi-label">FBA available (all mapped SKUs)</div><div class="kpi-value ${totalAvail<=0?'red':''}">${fmtNum(totalAvail)}</div><div class="kpi-sub">units on hand at Amazon</div></div>
+    <div class="kpi-card"><div class="kpi-label">Amazon quantity (all mapped SKUs)</div><div class="kpi-value ${totalAvail<=0?'red':''}">${fmtNum(totalAvail)}</div><div class="kpi-sub">available + FC transfer + reserved + inbound${SETTINGS.amazonSubtractUnfulfillable!==false?' − unfulfillable':''}</div></div>
     <div class="kpi-card"><div class="kpi-label">Units shipped, T30</div><div class="kpi-value">${fmtNum(totalT30)}</div><div class="kpi-sub">${(totalT30/30).toFixed(1)}/day combined</div></div>
-    <div class="kpi-card"><div class="kpi-label">Out of stock at Amazon</div><div class="kpi-value ${oosCount>0?'red':'jade'}">${oosCount}</div><div class="kpi-sub">SKU${oosCount!==1?'s':''} with 0 available</div></div>
+    <div class="kpi-card"><div class="kpi-label">Out of stock at Amazon</div><div class="kpi-value ${oosCount>0?'red':'jade'}">${oosCount}</div><div class="kpi-sub">SKU${oosCount!==1?'s':''} with 0 Amazon quantity</div></div>
   `;
   document.getElementById('amzSub').textContent = `FBA snapshot: ${D.asOf}`;
 
   document.getElementById('amzBody').innerHTML = onAmazonSkus.map(s=>{
-    const amzSkusForMaster = Object.entries(SETTINGS.amazonMapping).filter(([a,m])=>m===s.code).map(([a])=>a);
-    return amzSkusForMaster.map(amzSku=>{
-      const f = D.amazon.fba[amzSku];
-      if (!f) return '';
+    return amazonRowsFor(s.code).map(f=>{
+      const amzSku = f.amzSku;
+      const pos = Math.max(0, (f.available||0)+(f.fcTransfer||0)+(f.reserved||0)+(f.inbound||0)-(SETTINGS.amazonSubtractUnfulfillable!==false?(f.unfulfillable||0):0));
+      const status = (SETTINGS.skuConfig[s.code]||{}).lifecycle==='discontinued' ? 'disc' : pos<=0 ? 'oos' : (f.daysOfSupply <= leadTimeDays(s.code) ? 'now' : f.daysOfSupply <= leadTimeDays(s.code)+SETTINGS.skuConfig[s.code].safetyDays ? 'soon':'ok');
       const vel = f.t30/30;
-      const status = f.available<=0 ? 'oos' : (f.daysOfSupply <= leadTimeDays(s.code) ? 'now' : f.daysOfSupply <= leadTimeDays(s.code)+SETTINGS.skuConfig[s.code].safetyDays ? 'soon':'ok');
+      const adv = [f.recAction, f.healthStatus].filter(Boolean).join(' · ');
+      const fee = /^y/i.test(f.lowFee||'') ? '<br><span class="num red" style="font-size:10.5px">low-inventory fee applies</span>' : '';
+      const shipIn = f.recShipInDate ? `<span class="num amber">${normalizeDate(f.recShipInDate)||svgEsc(f.recShipInDate)}</span>${f.recShipInQty?`<br><span class="num dim" style="font-size:10.5px">qty ${f.recShipInQty.toLocaleString('en-US')}</span>`:''}` : '<span class="num dim">—</span>';
       return `<tr>
-        <td><span class="sku-name">${skuName(s.code)}</span><br><span class="sku-code">${amzSku}</span></td>
-        <td><span class="num big ${f.available<=0?'red':''}">${f.available.toLocaleString('en-US')}</span></td>
-        <td><span class="num dim">${f.inbound.toLocaleString('en-US')}</span></td>
+        <td><span class="sku-name">${skuName(s.code)}</span><br><span class="sku-code">${svgEsc(amzSku)}</span>${f.asin?`<br><span class="sku-code">${svgEsc(f.asin)}</span>`:''}</td>
+        <td><span class="num ${(f.available||0)<=0?'red':''}">${(f.available||0).toLocaleString('en-US')}</span></td>
+        <td><span class="num dim">${(f.fcTransfer||0).toLocaleString('en-US')}</span></td>
+        <td><span class="num dim">${(f.reserved||0).toLocaleString('en-US')}</span></td>
+        <td><span class="num dim">${(f.inbound||0).toLocaleString('en-US')}</span></td>
+        <td><span class="num dim">${(f.unfulfillable||0).toLocaleString('en-US')}</span></td>
+        <td><span class="num big ${pos<=0?'red':''}">${pos.toLocaleString('en-US')}</span></td>
         <td><span class="num">${f.t7.toLocaleString('en-US')}</span></td>
         <td><span class="num">${f.t30.toLocaleString('en-US')}</span></td>
         <td><span class="num">${vel.toFixed(1)}</span></td>
         <td><span class="num ${f.daysOfSupply<=14?'red':f.daysOfSupply<=30?'amber':'jade'}">${f.daysOfSupply}</span></td>
-        <td><span class="num dim">${f.weeksCoverT30}</span></td>
-        <td><span class="num dim">${f.recAction||'—'}</span></td>
+        <td><span class="num dim">${svgEsc(adv)||'—'}</span>${fee}</td>
+        <td>${shipIn}</td>
         <td><span class="badge-pill status-${status}">${statusLabel(status)}</span></td>
       </tr>`;
     }).join('');
-  }).join('') || `<tr><td colspan="10" class="empty-state">No Amazon-mapped SKUs found in FBA report</td></tr>`;
+  }).join('') || `<tr><td colspan="14" class="empty-state">No Amazon-mapped SKUs found in the FBA report</td></tr>`;
 
   // FBM reference panel
   if (D.amazon.hasOrdersFile) {
@@ -2850,9 +3224,12 @@ function renderAmazon(){
     document.getElementById('fbmPanel').style.display='none';
   }
 
-  document.getElementById('notOnAmazonList').textContent = notOnAmazon.length
-    ? notOnAmazon.map(s=>s.name).join(', ') + ' — not currently sold on Amazon (or not mapped in Settings).'
-    : `All ${MASTER_SKUS.length} SKUs are mapped to an Amazon listing.`;
+  const listing = MASTER_SKUS.map(s=>({ s, st: amazonListing(s.code) }));
+  const chip = (st) => st==='listed' ? '<span class="badge-pill status-ok">Listed — in the FBA report</span>' : st==='not-listed' ? '<span class="badge-pill status-na">Not listed on Amazon</span>' : '<span class="badge-pill status-now">No Amazon data — check mapping</span>';
+  document.getElementById('notOnAmazonList').innerHTML = listing.map(x=>`<div style="display:flex;gap:10px;align-items:center;padding:3px 0"><span style="min-width:190px">${svgEsc(x.s.name)}</span>${chip(x.st)}</div>`).join('')
+    + `<div style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">“Not listed” is a choice you make per SKU in Settings. “No Amazon data” means the SKU is expected on Amazon (or unset) but no row in the FBA report is mapped to it — a gap, not a zero.</div>`;
+  const aw = (D.amazonWarnings||[]);
+  document.getElementById('amazonCaveats').innerHTML += aw.map(w=>`<div class="caveat"><span>⚠️</span><div>${svgEsc(w)}</div></div>`).join('');
 }
 
 // =========================================================================
@@ -2905,7 +3282,7 @@ function generateWeeklyReport(){
   });
   const totalWeek = rows.filter(r=>isProductSku(r.sku)).reduce((s,r)=>s+r.weekUnits,0);
   const narrative = last7.length
-    ? `Over the ${last7.length} day${last7.length!==1?'s':''} ending ${last7[last7.length-1]}, Quasi sold ${totalWeek.toLocaleString('en-US')} units across the ${PRODUCT_SKU_COUNT} product SKUs on Shopify. Compare each SKU's weekly pace to its full-period average below to spot SKUs speeding up or slowing down.`
+    ? `Over the ${last7.length} day${last7.length!==1?'s':''} ending ${last7[last7.length-1]}, Quasi sold ${totalWeek.toLocaleString('en-US')} units across the ${PRODUCT_SKU_COUNT} product SKUs on Shopify. Compare each SKU's weekly pace to its 30-day rate below to spot SKUs speeding up or slowing down.`
     : `Not enough daily data to build a weekly view yet.`;
   return { title:`Weekly Report — week ending ${last7[last7.length-1]||'—'}`, narrative, rows, last7, totalWeek };
 }
@@ -2957,7 +3334,7 @@ function renderWeeklyReportHTML(){
       <div class="report-stat"><div class="report-stat-label">Days covered</div><div class="report-stat-value">${r.last7.length}</div></div>
     </div>
     <div class="report-section-title">Sales by SKU — trailing ${r.last7.length} days</div>
-    <table><thead><tr><th>SKU</th><th>Units (week)</th><th>Avg/day (week)</th><th>Avg/day (period)</th><th>vs period avg</th><th>Status</th></tr></thead><tbody>
+    <table><thead><tr><th>SKU</th><th>Units (week)</th><th>Avg/day (week)</th><th>Avg/day (30-day rate)</th><th>vs period avg</th><th>Status</th></tr></thead><tbody>
     ${r.rows.map(row=>{
       const arrow = row.pctDiff>5 ? '<span class="trend-arrow up">▲</span>' : row.pctDiff<-5 ? '<span class="trend-arrow down">▼</span>' : '<span class="trend-arrow flat">—</span>';
       return `<tr><td><span class="sku-name">${row.name}</span></td><td><span class="num">${row.weekUnits.toLocaleString('en-US')}</span>${row.orderBased?'<span class="sub">orders</span>':''}</td><td><span class="num">${row.weekAvg.toFixed(1)}</span></td><td><span class="num dim">${row.overallAvg.toFixed(1)}</span></td><td>${arrow} <span class="num">${row.pctDiff>=0?'+':''}${row.pctDiff.toFixed(0)}%</span></td><td><span class="badge-pill status-${row.status}">${statusLabel(row.status)}</span></td></tr>`;
@@ -2976,15 +3353,16 @@ function renderHealthReportHTML(){
       <div class="report-stat"><div class="report-stat-label">Combined velocity</div><div class="report-stat-value">${r.metrics.filter(m=>isProductSku(m.sku)).reduce((s,m)=>s+m.combinedVel,0).toFixed(1)}/day</div></div>
     </div>
     <div class="report-section-title">Full SKU status</div>
-    <table><thead><tr><th>SKU</th><th>Status</th><th>On-hand</th><th>Days of supply</th><th>Lead time</th><th>Reorder-by</th><th>Suggested order</th><th>Inbound</th></tr></thead><tbody>
+    <table><thead><tr><th>SKU</th><th>Status</th><th>On-hand</th><th>Days of supply<br><small>on-hand only</small></th><th>Projected stockout<br><small>incl. inbound</small></th><th>Lead time</th><th>Reorder-by</th><th>Suggested order</th><th>Inbound</th></tr></thead><tbody>
     ${r.metrics.map(m=>`<tr>
       <td><span class="sku-name">${skuName(m.sku)}</span></td>
       <td><span class="badge-pill status-${m.status}">${statusLabel(m.status)}</span></td>
       <td><span class="num">${fmtNum(m.combinedOnHand)}</span>${m.onAmazon?`<span class="sub">US ${fmtNum(m.usOnHandNow)} · AMZ ${fmtNum(m.amzOnHandNow)}</span>`:''}</td>
       <td><span class="num">${fmtDays(m.daysOfSupply)}</span></td>
+      <td><span class="num">${stockoutText(m)}</span></td>
       <td><span class="num dim">${Math.round(m.leadTime)}d</span></td>
-      <td>${m.overdueDays>0?`<span class="num red">Overdue ${m.overdueDays}d</span>`:`<span class="num dim">${m.reorderByDate}</span>`}</td>
-      <td>${m.status!=='ok'?`<span class="num">${m.container.toLocaleString('en-US')}</span>`:`<span class="num dim">—</span>`}</td>
+      <td>${(m.status==='disc'||m.status==='insuf'||m.status==='nodata')?`<span class="num dim">—</span>`:m.overdueDays>0?`<span class="num red">Overdue ${m.overdueDays}d</span>`:`<span class="num dim">${m.reorderByDate}</span>`}</td>
+      <td>${(m.status==='now'||m.status==='soon'||m.status==='oos')?(m.suggestedNet>0?`<span class="num">${m.suggestedContainers} × container</span><span class="sub">${m.suggestedUnits.toLocaleString('en-US')} units</span>`:`<span class="num dim">covered by inbound</span>`):`<span class="num dim">—</span>`}</td>
       <td>${m.inboundQty>0?`<span class="num ${m.inboundCoverage==='covered'?'jade':'red'}">${m.inboundQty.toLocaleString('en-US')}</span>`:`<span class="num dim">—</span>`}</td>
     </tr>`).join('')}
     </tbody></table>
@@ -3035,7 +3413,7 @@ function buildReportText(){
   if (currentReportType==='health'){
     const r = generateHealthReport();
     let t = `QUASI — INVENTORY HEALTH REPORT (as of ${D.asOf})\n\n${r.narrative}\n\n`;
-    r.metrics.forEach(m=> t+= `${skuName(m.sku)}: ${statusLabel(m.status)} · ${fmtNum(m.combinedOnHand)} on hand · ${fmtDays(m.daysOfSupply)}d supply · velocity ${m.combinedVel.toFixed(1)}/day${m.overdueDays>0?` · OVERDUE ${m.overdueDays}d`:''}\n`);
+    r.metrics.forEach(m=> t+= `${skuName(m.sku)}: ${statusLabel(m.status)} · ${fmtNum(m.combinedOnHand)} on hand · ${fmtDays(m.daysOfSupply)}d supply (on-hand only) · stockout ${stockoutText(m)} · velocity ${m.rateOk?m.combinedVel.toFixed(1)+'/day':'n/a'}${m.overdueDays>0?` · OVERDUE ${m.overdueDays}d`:''}${(m.status==='now'||m.status==='soon'||m.status==='oos')&&m.suggestedNet>0?` · suggest ${m.suggestedContainers} container(s)`:''}\n`);
     return t;
   }
   if (currentReportType==='trend'){
@@ -3074,7 +3452,7 @@ function exportReportCSV(){
   if (currentReportType==='daily'){
     const r = generateDailyReport();
     downloadCSV(`quasi-daily-report-${r.date}.csv`, ['SKU','Name','Units Sold','On-Hand','Days of Supply','Status'],
-      r.rows.map(row=>[row.sku,row.name,row.units,Math.round(row.onHand),isFinite(row.daysOfSupply)?Math.round(row.daysOfSupply):'∞',statusLabel(row.status)]));
+      r.rows.map(row=>[row.sku,row.name,row.units,Math.round(row.onHand),Number.isNaN(row.daysOfSupply)?'n/a':isFinite(row.daysOfSupply)?Math.round(row.daysOfSupply):'∞',statusLabel(row.status)]));
   } else if (currentReportType==='weekly'){
     const r = generateWeeklyReport();
     downloadCSV(`quasi-weekly-report-${r.last7[r.last7.length-1]||'na'}.csv`, ['SKU','Name','Units This Week','Avg/Day (Week)','Avg/Day (Period)','% Diff vs Period','Status'],
@@ -3117,7 +3495,11 @@ function renderInbounds(){
     <div class="kpi-card"><div class="kpi-label">Reorder-now SKUs with no inbound</div><div class="kpi-value ${uncoveredCount>0?'red':'jade'}">${uncoveredCount}</div><div class="kpi-sub">needs a shipment logged or a new PO</div></div>
   `;
 
-  document.getElementById('inboundCaveats').innerHTML = `<div class="caveat info"><span>ℹ️</span><div>This tracker is separate from your Shopify/Amazon uploads \u2014 it's Quasi's own shipment log, editable here and saved in this browser. It seeds from the tracker shared on 2026-08-14; edit or delete rows freely from here on. Click the arrow on any row for PO number, cost, deposit, and shipping detail.</div></div>`;
+  const etaMissing = INBOUNDS.filter(r=>(r.status==='in transit'||r.status==='delayed'||r.status==='planned') && !r.estDelivery);
+  const rcvMissing = INBOUNDS.filter(r=>r.status==='received' && !r.receiveDate);
+  const dataWarn = (etaMissing.length ? `<div class="caveat"><span>📅</span><div><b>${etaMissing.length} shipment${etaMissing.length!==1?'s have':' has'} no ETA</b> (${etaMissing.map(r=>skuName(r.sku)+(r.poNumber?' '+r.poNumber:'')).join(', ')}). Without an arrival date a shipment can't be placed on the timeline, so it is left out of every projected stockout and reorder date.</div></div>` : '')
+    + (rcvMissing.length ? `<div class="caveat info"><span>📅</span><div><b>${rcvMissing.length} received shipment${rcvMissing.length!==1?'s have':' has'} no actual receive date.</b> Enter it so the dashboard can tell whether the warehouse count already includes the goods.</div></div>` : '');
+  document.getElementById('inboundCaveats').innerHTML = dataWarn + `<div class="caveat info"><span>ℹ️</span><div>This tracker is separate from your Shopify/Amazon uploads \u2014 it's Quasi's own shipment log, editable here and saved in this browser. It seeds from the tracker shared on 2026-08-14; edit or delete rows freely from here on. Click the arrow on any row for PO number, cost, deposit, and shipping detail.</div></div>`;
 
   let rows = INBOUNDS.slice();
   if (inboundFilter !== 'all') rows = rows.filter(r=>r.status===inboundFilter);
@@ -3134,9 +3516,11 @@ function renderInbounds(){
         ${MASTER_SKUS.map(s=>`<option value="${s.code}" ${r.sku===s.code?'selected':''}>${s.name}</option>`).join('')}
       </select></td>
       <td><input type="text" value="${r.poNumber}" placeholder="—" onchange="updateInboundField('${r.id}','poNumber',this.value)" style="width:100px"></td>
+      <td><input type="text" value="${r.containerNumber||''}" placeholder="—" onchange="updateInboundField('${r.id}','containerNumber',this.value)" style="width:110px"></td>
       <td><input type="number" min="0" value="${r.qty}" onchange="updateInboundField('${r.id}','qty',this.value)" style="width:90px"></td>
       <td><input type="date" value="${r.orderDate}" onchange="updateInboundField('${r.id}','orderDate',this.value)"></td>
-      <td><input type="date" value="${r.estDelivery}" onchange="updateInboundField('${r.id}','estDelivery',this.value)"></td>
+      <td><input type="date" value="${r.estDelivery}" onchange="updateInboundField('${r.id}','estDelivery',this.value)">${(!r.estDelivery && r.status!=='received')?'<span class="overdue-flag">ETA needed</span>':''}</td>
+      <td><input type="date" value="${r.receiveDate||''}" onchange="updateInboundField('${r.id}','receiveDate',this.value)">${(r.status==='received' && !r.receiveDate)?'<span class="overdue-flag">date needed</span>':''}</td>
       <td><select onchange="updateInboundField('${r.id}','status',this.value)">
         <option value="planned" ${r.status==='planned'?'selected':''}>Planned</option>
         <option value="in transit" ${r.status==='in transit'?'selected':''}>In Transit</option>
@@ -3147,7 +3531,7 @@ function renderInbounds(){
       <td><span class="num">$${Math.round(totalAmount(r)).toLocaleString('en-US')}</span></td>
       <td><button class="icon-btn" onclick="deleteInboundRow('${r.id}')" title="Remove">✕</button></td>
     </tr>`;
-    const detailRow = expanded ? `<tr class="po-detail-row"><td colspan="10">
+    const detailRow = expanded ? `<tr class="po-detail-row"><td colspan="12">
       <div class="po-detail-grid">
         <div class="field"><label>Unit cost (USD)</label><input type="number" step="0.01" min="0" value="${r.unitCost}" onchange="updateInboundField('${r.id}','unitCost',this.value)"></div>
         <div class="field"><label>Total amount</label><input type="text" value="$${totalAmount(r).toFixed(2)}" disabled></div>
@@ -3167,7 +3551,6 @@ function renderInbounds(){
           <option value="Partial Payment" ${r.shippingPaymentStatus==='Partial Payment'?'selected':''}>Partial Payment</option>
           <option value="Pending" ${r.shippingPaymentStatus==='Pending'?'selected':''}>Pending</option>
         </select></div>
-        <div class="field"><label>Actual receive date</label><input type="date" value="${r.receiveDate}" onchange="updateInboundField('${r.id}','receiveDate',this.value)"></div>
         <div class="field" style="grid-column:1/-1"><label>Notes</label><input type="text" value="${r.notes}" placeholder="—" onchange="updateInboundField('${r.id}','notes',this.value)"></div>
       </div>
     </td></tr>` : '';
@@ -3229,7 +3612,7 @@ function dateInFreeze(dateStr){
 }
 function simulateForecast(sku, horizonDays=270){
   const m = computeBaseMetrics(sku); // NOT computeSkuMetrics — that now calls this function to derive status, so calling it back here would recurse
-  const vel = m.combinedVel;
+  const vel = (m.lifecycle==='discontinued' || !m.rate.ok) ? 0 : m.combinedVel;   // discontinued: never propose a new order; no rate: nothing to project
   const lt = m.leadTime;
   const container = SETTINGS.skuConfig[sku].container;
   const today = new Date(todayISO()+'T00:00:00');
@@ -3423,10 +3806,8 @@ function renderForecasting(){
     document.getElementById('forecastFreezeNote').innerHTML = '';
     return;
   }
-  const usingGSheet = !!D.shopify.gsheetConnected;
-  document.getElementById('forecastDataSourceBanner').innerHTML = usingGSheet
-    ? `<div class="caveat" style="background:var(--jade-tint);border-color:var(--jade)"><span>📈</span><div><b>Velocity computed from connected Daily Sales history</b> — ${D.shopify.minDate} to ${D.shopify.maxDate} (${D.shopify.dayCount} days). This is the same longer history used everywhere else once connected.${salesDataStalenessNote()}</div></div>`
-    : `<div class="caveat"><span>⚠️</span><div><b>Velocity computed from the uploaded Shopify Orders file only</b> — ${D.shopify.minDate} to ${D.shopify.maxDate} (${D.shopify.dayCount} days). Connect the team's Daily Sales history in Settings for a much longer, more accurate window.</div></div>`;
+  { const rs = allSkuMetrics().find(m=>m.rate && m.rate.windowStart);
+    document.getElementById('forecastDataSourceBanner').innerHTML = `<div class="caveat info"><span>📈</span><div><b>Velocity: trailing ${VELOCITY_WINDOW_DAYS} days of the uploaded Orders</b>${rs?` (${rs.rate.windowStart} to ${rs.rate.windowEnd})`:''}, out-of-stock days left out; Amazon from its own 30-day figure. Monthly seasonality multipliers from Settings are applied to every projected date.${salesDataStalenessNote()}</div></div>`; }
   const calendar = forecastCalendar(180);
   const nextOrder = calendar[0];
   const projectedCount = calendar.filter(r=>r.source==='Projected').length;
@@ -3546,12 +3927,19 @@ function exportForecastCSV(){
 function exportSupplyChainCSV(){
   const metrics = allSkuMetrics();
   downloadCSV('quasi-supply-chain-breakdown.csv', ['SKU','Name','US+Amazon On-Hand','China Buffer','Total Available','Days of Supply','Days of Supply incl. China','China Bridge','US On-Hand','Amazon On-Hand'],
-    metrics.map(m=>[m.sku, skuName(m.sku), Math.round(m.combinedOnHand), Math.round(m.chinaStock), Math.round(m.combinedOnHand+m.chinaStock), isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', isFinite(m.daysOfSupplyWithChina)?Math.round(m.daysOfSupplyWithChina):'∞', m.chinaBridge, Math.round(m.usOnHandNow), m.onAmazon?Math.round(m.amzOnHandNow):'']));
+    metrics.map(m=>[m.sku, skuName(m.sku), Math.round(m.combinedOnHand), Math.round(m.chinaStock), Math.round(m.combinedOnHand+m.chinaStock), Number.isNaN(m.daysOfSupply)?'n/a':isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', isFinite(m.daysOfSupplyWithChina)?Math.round(m.daysOfSupplyWithChina):'∞', m.chinaBridge, Math.round(m.usOnHandNow), m.onAmazon?Math.round(m.amzOnHandNow):'']));
 }
 
 // =========================================================================
 // SETTINGS TAB
 // =========================================================================
+const LEAD_FIELDS = { packagingDays:'Packaging days', productionDays:'Production days', shipMinDays:'Shipping min days', shipMaxDays:'Shipping max days', shipOnlyDays:'China → US ship-only days' };
+const LIFECYCLE_OPTS = [['active','Active'],['launching','Launching'],['discontinued','Discontinued']];
+function lifecycleHint(m){
+  if (m==='launching') return 'Launching: days of supply, stockout and reorder-by stay hidden ("insufficient history") until the SKU has 14 days of sales, counted from its first sale.';
+  if (m==='discontinued') return 'Discontinued: no reorder status and no suggested order — the dashboard shows a projected sell-through date instead.';
+  return 'Active: normal reorder logic.';
+}
 function buildSettingsUI(){
   // SKU lead time config
   document.getElementById('skuSettingsList').innerHTML = MASTER_SKUS.map(s=>{
@@ -3559,6 +3947,11 @@ function buildSettingsUI(){
     const lt = leadTimeDays(s.code);
     const shipOnly = c.shipOnlyDays !== undefined ? c.shipOnlyDays : (c.shipMinDays+c.shipMaxDays)/2;
     const china = CHINA_STOCK && CHINA_STOCK[s.code] ? CHINA_STOCK[s.code].china : null;
+    const rt = D ? skuRate(s.code) : null;
+    const safetyUnits = (rt && rt.ok) ? Math.round(rt.combined * c.safetyDays) : null;
+    const so = (SETTINGS.stockouts[s.code]||[]);
+    const amzSel = c.amazonListed===true ? 'yes' : c.amazonListed===false ? 'no' : 'unknown';
+    const inp = 'font-family:\'IBM Plex Mono\',monospace;font-size:12px;padding:5px 7px;border:1px solid var(--line2);border-radius:6px';
     return `
     <div class="sku-settings-block">
       <div class="sku-settings-head">
@@ -3567,24 +3960,45 @@ function buildSettingsUI(){
           <span class="sku-settings-name">${s.name}</span>
           <span class="sku-settings-code">${s.code}</span>
           ${c.assumed ? `<span class="assumption-flag">⚑ assumed</span>`:''}
+          ${s.custom ? `<span class="assumption-flag" style="background:#ECE9F1;color:#5B5368">added by you</span>`:''}
           ${OPS_SAFETY_DAYS && OPS_SAFETY_DAYS[s.code] ? `<span class="assumption-flag" style="background:var(--jade-tint);color:var(--jade)">✓ safety days from ops data</span>`:''}
         </div>
       </div>
       <div class="settings-grid">
+        <div class="field"><label>Lifecycle</label><select onchange="updateSkuField('${s.code}','lifecycle',this.value)">${LIFECYCLE_OPTS.map(([v,l])=>`<option value="${v}" ${(c.lifecycle||'active')===v?'selected':''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label>Sold on Amazon?</label><select onchange="updateAmazonListed('${s.code}',this.value)"><option value="yes" ${amzSel==='yes'?'selected':''}>Yes — listed</option><option value="no" ${amzSel==='no'?'selected':''}>No — not listed on Amazon</option><option value="unknown" ${amzSel==='unknown'?'selected':''}>Not set yet</option></select></div>
         <div class="field"><label>Packaging (days)</label><input type="number" min="0" value="${c.packagingDays}" onchange="updateSkuConfig('${s.code}','packagingDays',this.value)"></div>
         <div class="field"><label>Production (days)</label><input type="number" min="0" value="${c.productionDays}" onchange="updateSkuConfig('${s.code}','productionDays',this.value)"></div>
         <div class="field"><label>Shipping min (days)</label><input type="number" min="0" value="${c.shipMinDays}" onchange="updateSkuConfig('${s.code}','shipMinDays',this.value)"></div>
         <div class="field"><label>Shipping max (days)</label><input type="number" min="0" value="${c.shipMaxDays}" onchange="updateSkuConfig('${s.code}','shipMaxDays',this.value)"></div>
         <div class="field"><label>Container / MOQ (units)</label><input type="number" min="0" value="${c.container}" onchange="updateSkuConfig('${s.code}','container',this.value)"></div>
-        <div class="field"><label>Safety stock buffer (days)</label><input type="number" min="0" value="${c.safetyDays}" onchange="updateSkuConfig('${s.code}','safetyDays',this.value)"></div>
+        <div class="field"><label>Safety stock (days of demand)</label><input type="number" min="0" value="${c.safetyDays}" onchange="updateSkuConfig('${s.code}','safetyDays',this.value)"></div>
         <div class="field"><label>China → US ship-only (days)</label><input type="number" min="0" value="${shipOnly}" onchange="updateSkuConfig('${s.code}','shipOnlyDays',this.value)"></div>
       </div>
-      <div class="computed-line">Total lead time (new order): <b>${Math.round(lt)} days</b> (~${(lt/30).toFixed(1)} months) · Reorder point: <b>${Math.round(lt+c.safetyDays)} days</b> of supply${china!==null ? ` · China buffer stock: <b>${china.toLocaleString('en-US')} units</b> (~${Math.round(shipOnly)}d to ship if requested)` : ''}</div>
+      <div class="computed-line">Total lead time (new order): <b>${Math.round(lt)} days</b> (~${(lt/30).toFixed(1)} months) · Safety stock: <b>${c.safetyDays} days of demand</b>${safetyUnits!==null?` ≈ <b>${safetyUnits.toLocaleString('en-US')} units</b> at the current rate`:''} · Reorder-by = projected stockout − ${Math.round(lt)} days${china!==null ? ` · China buffer stock: <b>${china.toLocaleString('en-US')} units</b> (~${Math.round(shipOnly)}d to ship if requested)` : ''}</div>
+      <div class="computed-line" style="color:var(--ink-dim)">${lifecycleHint(c.lifecycle||'active')}</div>
+      <div style="padding:8px 14px 12px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">Out-of-stock periods <span style="font-weight:400;color:var(--ink-dim)">— days with no sales because there was nothing to sell are left out of velocity${rt && rt.ok ? ` (currently ${rt.excludedDays} day${rt.excludedDays!==1?'s':''} excluded in the 30-day window)` : ''}. Zero-stock days between two saved uploads are detected automatically.</span></div>
+        ${so.map((per,i)=>`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:5px">
+          <input type="date" value="${per.start||''}" style="${inp}" onchange="updateStockout('${s.code}',${i},'start',this.value)"><span style="font-size:12px;color:var(--ink-dim)">to</span>
+          <input type="date" value="${per.end||''}" style="${inp}" onchange="updateStockout('${s.code}',${i},'end',this.value)">
+          <input type="text" value="${svgEsc(per.note||'')}" placeholder="note (optional)" style="${inp};flex:1;min-width:120px" onchange="updateStockout('${s.code}',${i},'note',this.value)">
+          <button class="icon-btn" onclick="removeStockout('${s.code}',${i})" title="Remove">✕</button></div>`).join('')}
+        <button class="btn btn-outline" style="font-size:11.5px;padding:4px 10px" onclick="addStockout('${s.code}')">+ Add out-of-stock period</button>
+      </div>
     </div>`;
-  }).join('');
+  }).join('') + `<div style="padding:10px 20px 14px;font-size:11.5px;color:var(--ink-dim)">Safety stock is held because the warehouse cycle-counts weekly rather than live, so the on-hand figure is always a snapshot that can be up to a week old. It is added to every suggested order.</div>`;
+
+  renderAddSku();
+  renderLeadHistory();
 
   // Seasonality
   const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const st = document.getElementById('seasonTools');
+  if (st) st.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-outline" onclick="applySeasonPreset([10,11,12],1.5)">Q4 (Oct–Dec) ×1.5</button>
+      <button class="btn btn-outline" onclick="applySeasonPreset([1,2,3,4,5,6,7,8,9,10,11,12],1)">Reset all to ×1.0</button>
+      <span style="font-size:11.5px;color:var(--ink-dim)">${[10,11,12].every(m=>SETTINGS.seasonality[m]===1.5)?'Q4 is currently planned at 1.5× the run rate.':'Applied to the trailing-30-day rate for the months each projection passes through.'}</span></div>`;
   document.getElementById('monthGrid').innerHTML = monthNames.map((mn,i)=>`
     <div class="month-field">
       <label>${mn}</label>
@@ -3592,19 +4006,25 @@ function buildSettingsUI(){
     </div>
   `).join('');
 
-  // Amazon SKU mapping
-  const detected = (D && D.amazonSkusDetected) ? D.amazonSkusDetected : Object.keys(SETTINGS.amazonMapping);
-  document.getElementById('mappingList').innerHTML = detected.length ? detected.map(amzSku=>{
-    const current = SETTINGS.amazonMapping[amzSku] || '';
+  // Amazon mapping — by ASIN
+  const opts = document.getElementById('amazonOptions');
+  if (opts) opts.innerHTML = `<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer"><input type="checkbox" ${SETTINGS.amazonSubtractUnfulfillable!==false?'checked':''} onchange="setSubtractUnfulfillable(this.checked)" style="width:15px;height:15px"> Amazon quantity = available + FC transfer + reserved + inbound-to-FBA <b>− unfulfillable</b></label><div style="font-size:11.5px;color:var(--ink-dim);margin:4px 0 0 23px">Unfulfillable units are not part of the other four columns of the FBA report, so subtracting them lowers the total by that many units. Untick to leave them out of the formula.</div>`;
+  const byKey = {};
+  if (D && D.amazon && D.amazon.fba) Object.entries(D.amazon.fba).forEach(([sku,f])=>{ const key = f.asin || ('sku:'+sku); (byKey[key] = byKey[key] || { asin:f.asin||'', skus:[], name:f.productName||'' }).skus.push(sku); });
+  else Object.keys(SETTINGS.amazonAsinMapping).forEach(a=>{ byKey[a] = { asin:a, skus:[], name:'' }; });
+  window.__amzRows = Object.values(byKey);
+  document.getElementById('mappingList').innerHTML = window.__amzRows.length ? window.__amzRows.map((row,i)=>{
+    const current = row.asin ? (SETTINGS.amazonAsinMapping[row.asin]||'') : (SETTINGS.amazonMapping[row.skus[0]]||'');
     return `<div class="mapping-row">
-      <span class="sku-code">${amzSku}</span>
-      <select onchange="updateMapping('${amzSku}',this.value)">
+      <span class="sku-code">${svgEsc(row.asin || 'no ASIN')}</span>
+      <span style="flex:1;min-width:160px;font-size:11.5px;color:var(--ink-dim)">${row.skus.length?'seller SKU: '+svgEsc(row.skus.join(', ')):''}${row.name?'<br>'+svgEsc(clip(row.name,70)):''}</span>
+      <select onchange="updateAsinMappingIdx(${i},this.value)">
         <option value="">— Not tracked / unmapped —</option>
         ${MASTER_SKUS.map(s=>`<option value="${s.code}" ${current===s.code?'selected':''}>${s.name}</option>`).join('')}
       </select>
-      <span style="font-size:11px;color:var(--ink-dim)">${current ? '✓ mapped' : '⚑ needs mapping'}</span>
+      <span style="font-size:11px;color:${current?'var(--ink-dim)':'var(--red)'}">${current ? '✓ mapped' : '⚑ needs mapping — not counted'}</span>
     </div>`;
-  }).join('') : `<div class="empty-state">No Amazon SKUs detected yet — upload Amazon files to populate this list.</div>`;
+  }).join('') : `<div class="empty-state">No Amazon products detected yet — upload the FBA report to populate this list.</div>`;
 
   renderFreezeWindows();
 
@@ -3613,13 +4033,100 @@ function buildSettingsUI(){
     SETTINGS.excludeRefunded = this.checked;
   };
 }
+function afterSettingsChange(){ persistSettings(); invalidateRates(); if (D) renderAll(); else buildSettingsUI(); }
 function updateSkuConfig(sku, field, val){
-  SETTINGS.skuConfig[sku][field] = parseFloat(val)||0;
-  SETTINGS.skuConfig[sku].assumed = false; // once user edits, no longer "assumed default"
-  buildSettingsUI();
+  const c = SETTINGS.skuConfig[sku];
+  const nv = parseFloat(val)||0;
+  if (LEAD_FIELDS[field]) {
+    const before = field==='shipOnlyDays' ? (c.shipOnlyDays!==undefined ? c.shipOnlyDays : (c.shipMinDays+c.shipMaxDays)/2) : c[field];
+    const totalBefore = leadTimeDays(sku);
+    c[field] = nv;
+    if (nv !== before) SETTINGS.leadTimeHistory.push({ ts:new Date().toISOString(), sku, field:LEAD_FIELDS[field], from:before, to:nv, totalBefore, totalAfter:leadTimeDays(sku), note:'' });
+  } else c[field] = nv;
+  c.assumed = false; // once user edits, no longer "assumed default"
+  afterSettingsChange();
 }
-function updateSeason(month, val){ SETTINGS.seasonality[month] = parseFloat(val)||1; }
-function updateMapping(amzSku, masterSku){ SETTINGS.amazonMapping[amzSku] = masterSku; }
+function updateSkuField(sku, field, val){ SETTINGS.skuConfig[sku][field] = val; afterSettingsChange(); }
+function updateAmazonListed(sku, v){ SETTINGS.skuConfig[sku].amazonListed = v==='yes' ? true : v==='no' ? false : null; afterSettingsChange(); }
+function addStockout(sku){ (SETTINGS.stockouts[sku] = SETTINGS.stockouts[sku] || []).push({ start: todayISO(), end: todayISO(), note:'' }); afterSettingsChange(); }
+function updateStockout(sku, i, field, val){ if (SETTINGS.stockouts[sku] && SETTINGS.stockouts[sku][i]) { SETTINGS.stockouts[sku][i][field] = val; afterSettingsChange(); } }
+function removeStockout(sku, i){ if (SETTINGS.stockouts[sku]) { SETTINGS.stockouts[sku].splice(i,1); afterSettingsChange(); } }
+function applySeasonPreset(months, mult){ months.forEach(m=>{ SETTINGS.seasonality[m] = mult; }); afterSettingsChange(); }
+function setSubtractUnfulfillable(on){ SETTINGS.amazonSubtractUnfulfillable = !!on; afterSettingsChange(); }
+function updateAsinMappingIdx(i, masterSku){
+  const row = (window.__amzRows||[])[i]; if (!row) return;
+  if (row.asin) SETTINGS.amazonAsinMapping[row.asin] = masterSku; else row.skus.forEach(k=>{ SETTINGS.amazonMapping[k] = masterSku; });
+  afterSettingsChange();
+}
+// ---- add a SKU (new launch) ----
+function renderAddSku(){
+  const el = document.getElementById('addSkuBox'); if (!el) return;
+  const inp = 'font-size:12.5px;padding:7px 9px;border:1px solid var(--line2);border-radius:6px;background:var(--surface);color:var(--ink)';
+  el.innerHTML = `<div style="padding:14px 20px;border-top:1px solid var(--line)">
+    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Add a SKU (new launch)</div>
+    <div style="font-size:11.5px;color:var(--ink-dim);margin-bottom:8px">Use the exact SKU code Shopify and the 3PL use — orders and inventory are matched on it. The new SKU starts as <b>Launching</b>, so it shows "insufficient history" until it has 14 days of sales. If it goes on Amazon, map its ASIN under Amazon mapping.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="newSkuCode" placeholder="SKU code (exact)" style="${inp};min-width:200px;font-family:'IBM Plex Mono',monospace"><input id="newSkuName" placeholder="Display name" style="${inp};min-width:200px"><button class="btn btn-primary" onclick="addSkuFromUI()">Add SKU</button></div>
+    ${MASTER_SKUS.filter(m=>m.custom).length ? `<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)"><div style="font-weight:600;font-size:12.5px;margin-bottom:4px">Added SKUs — set the real code</div><div style="font-size:11.5px;color:var(--ink-dim);margin-bottom:6px">Placeholder codes must be replaced with the exact ShipSidekick / Shopify code before orders and inventory can match. Settings, lead times, out-of-stock periods, inbounds and ASIN mappings move with the rename.</div>${MASTER_SKUS.filter(m=>m.custom).map(m=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0;flex-wrap:wrap"><span style="min-width:210px;font-size:12.5px">${svgEsc(m.name)}</span><input id="renameSku_${m.code.replace(/[^A-Za-z0-9]/g,'_')}" value="${svgEsc(m.code)}" style="${inp};min-width:220px;font-family:'IBM Plex Mono',monospace"><button class="btn" onclick="renameSkuFromUI('${m.code.replace(/'/g,"\\'")}')">Save code</button></div>`).join('')}</div>` : ''}
+  </div>`;
+}
+function renameSkuCode(oldCode, newCode){
+  newCode = String(newCode||'').trim();
+  const m = MASTER_SKUS.find(x=>x.code===oldCode);
+  if (!m || !m.custom) return false;
+  if (!newCode || newCode===oldCode) return false;
+  if (MASTER_SKUS.some(x=>x.code===newCode)) { alert('That SKU code is already in use.'); return false; }
+  m.code = newCode;
+  const mv = (o)=>{ if (o && Object.prototype.hasOwnProperty.call(o,oldCode)) { o[newCode]=o[oldCode]; delete o[oldCode]; } };
+  mv(SETTINGS.skuConfig); mv(SETTINGS.stockouts);
+  Object.keys(SETTINGS.amazonAsinMapping||{}).forEach(a=>{ if (SETTINGS.amazonAsinMapping[a]===oldCode) SETTINGS.amazonAsinMapping[a]=newCode; });
+  (SETTINGS.leadTimeHistory||[]).forEach(e=>{ if (e.sku===oldCode) e.sku=newCode; });
+  try { (INBOUNDS||[]).forEach(r=>{ if (r.sku===oldCode) r.sku=newCode; }); if (typeof persistInbounds==='function') persistInbounds(); } catch(e){}
+  persistCustomSkus(); persistSettings(); afterSettingsChange();
+  return true;
+}
+function renameSkuFromUI(oldCode){
+  const el = document.getElementById('renameSku_'+oldCode.replace(/[^A-Za-z0-9]/g,'_'));
+  if (el && renameSkuCode(oldCode, el.value)) return;
+}
+function addSkuFromUI(){
+  const code = document.getElementById('newSkuCode').value.trim(), name = document.getElementById('newSkuName').value.trim();
+  if (!code) { alert('Enter the SKU code exactly as it appears in Shopify / the warehouse.'); return; }
+  if (!registerCustomSku(code, name)) { alert('That SKU code already exists.'); return; }
+  persistCustomSkus(); backfillSkuConfig(SETTINGS);
+  afterSettingsChange();
+}
+// ---- lead-time change history ----
+function renderLeadHistory(){
+  const el = document.getElementById('leadHistoryBox'); if (!el) return;
+  const h = (SETTINGS.leadTimeHistory||[]).map((e,i)=>({ ...e, i })).sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  const inp = 'font-size:12px;padding:6px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--surface);color:var(--ink)';
+  el.innerHTML = `<div style="padding:14px 20px;border-top:1px solid var(--line)">
+    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Lead-time change history</div>
+    <div style="font-size:11.5px;color:var(--ink-dim);margin-bottom:8px">Every edit to a lead-time field is logged here with the date and the before/after, and the note can say why. Changes made before this version existed were not recorded — use “Log a past change” to add one (for example the 6 October shift) with its reason.</div>
+    ${h.length ? `<div style="overflow-x:auto"><table><thead><tr><th>When</th><th>SKU</th><th>Field</th><th>Change</th><th>Total lead time</th><th>Why (note)</th></tr></thead><tbody>${h.map(e=>`<tr>
+      <td><span class="num dim">${String(e.ts).slice(0,16).replace('T',' ')}</span>${e.manual?'<span class="sub">logged by hand</span>':''}</td>
+      <td><span class="sku-name">${svgEsc(skuName(e.sku))}</span></td>
+      <td>${svgEsc(e.field)}</td>
+      <td><span class="num">${svgEsc(e.from)} → ${svgEsc(e.to)}</span></td>
+      <td><span class="num dim">${e.totalBefore!=null && e.totalAfter!=null ? Math.round(e.totalBefore)+'d → '+Math.round(e.totalAfter)+'d' : '—'}</span></td>
+      <td><input type="text" value="${svgEsc(e.note||'')}" placeholder="why?" style="${inp};width:100%;min-width:160px" onchange="updateLeadNote(${e.i},this.value)"></td></tr>`).join('')}</tbody></table></div>` : `<div class="empty-state" style="padding:10px 0">No lead-time changes recorded yet.</div>`}
+    <details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;font-weight:600">Log a past change</summary>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <input type="date" id="lhDate" style="${inp}">
+        <select id="lhSku" style="${inp}">${MASTER_SKUS.map(s=>`<option value="${s.code}">${svgEsc(s.name)}</option>`).join('')}</select>
+        <select id="lhField" style="${inp}">${Object.values(LEAD_FIELDS).map(f=>`<option>${f}</option>`).join('')}<option>Total lead time</option></select>
+        <input id="lhFrom" placeholder="from" style="${inp};width:70px"><input id="lhTo" placeholder="to" style="${inp};width:70px">
+        <input id="lhNote" placeholder="why (e.g. supplier quoted longer production)" style="${inp};flex:1;min-width:200px">
+        <button class="btn btn-outline" onclick="addLeadHistoryManual()">Add to history</button></div></details></div>`;
+}
+function updateLeadNote(i, val){ if (SETTINGS.leadTimeHistory[i]) { SETTINGS.leadTimeHistory[i].note = val; persistSettings(); } }
+function addLeadHistoryManual(){
+  const g = id=>document.getElementById(id).value;
+  if (!g('lhDate')) { alert('Pick the date the change happened.'); return; }
+  SETTINGS.leadTimeHistory.push({ ts:g('lhDate')+'T00:00:00', sku:g('lhSku'), field:g('lhField'), from:g('lhFrom'), to:g('lhTo'), totalBefore:null, totalAfter:null, note:g('lhNote'), manual:true });
+  persistSettings(); renderLeadHistory();
+}
+function updateSeason(month, val){ const v = parseFloat(val); SETTINGS.seasonality[month] = Number.isFinite(v) && v >= 0 ? v : 1; afterSettingsChange(); }
 
 function renderFreezeWindows(){
   const list = SETTINGS.freezeWindows || [];
@@ -3664,7 +4171,8 @@ function saveSettings(showToast){
 }
 function resetSettings(){
   if (!confirm('Reset all settings to defaults? This clears your saved lead times, container sizes, seasonality, and SKU mappings.')) return;
-  SETTINGS = defaultSettings();
+  const keepHistory = SETTINGS.leadTimeHistory || [];
+  SETTINGS = defaultSettings(); backfillSkuConfig(SETTINGS); SETTINGS.leadTimeHistory = keepHistory;
   if (D) {
     D.amazonSkusDetected.forEach(sku=>{ SETTINGS.amazonMapping[sku] = DEFAULT_AMAZON_GUESSES[sku] || ''; });
   }
@@ -3673,11 +4181,7 @@ function resetSettings(){
   if (D) renderAll();
 }
 function exportSettingsJSON(){
-  const blob = new Blob([JSON.stringify(SETTINGS,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'quasi-dashboard-settings.json';
-  a.click();
+  saveFileCompat('quasi-dashboard-settings.json', JSON.stringify(SETTINGS,null,2), 'application/json');
 }
 function importSettingsJSON(e){
   const file = e.target.files[0];
@@ -3692,6 +4196,11 @@ function importSettingsJSON(e){
       Object.assign(merged.amazonMapping, parsed.amazonMapping||{});
       merged.excludeRefunded = !!parsed.excludeRefunded;
       merged.freezeWindows = Array.isArray(parsed.freezeWindows) ? parsed.freezeWindows : merged.freezeWindows;
+      merged.amazonAsinMapping = parsed.amazonAsinMapping || {};
+      merged.leadTimeHistory = Array.isArray(parsed.leadTimeHistory) ? parsed.leadTimeHistory : [];
+      merged.stockouts = parsed.stockouts || {};
+      if (parsed.amazonSubtractUnfulfillable === false) merged.amazonSubtractUnfulfillable = false;
+      backfillSkuConfig(merged);
       SETTINGS = merged;
       persistSettings();
       buildSettingsUI();
@@ -3706,19 +4215,31 @@ function importSettingsJSON(e){
 // EXPORTS
 // =========================================================================
 function csvEscape(v){ const s=String(v??''); return (s.includes(',')||s.includes('"')||s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s; }
-function downloadCSV(filename, headers, rows){
-  const lines = [headers.join(','), ...rows.map(r=>r.map(csvEscape).join(','))];
-  const blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+// Saves a file. On the hosted claude.ai page the browser blocks plain download links, so the page's `downloads`
+// permission is used (the viewer confirms the save); anywhere else it's an ordinary download.
+async function saveFileCompat(filename, text, mime){
+  try {
+    if (typeof window!=='undefined' && window.claude && typeof window.claude.use==='function') {
+      const dl = await window.claude.use('downloads');
+      if (dl) { await dl.save({ filename, data: text }); return; }
+    }
+  } catch(e){ if (e && e.code && e.code!=='unavailable') return; }
+  const blob = new Blob([text], {type:mime});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
   a.click();
 }
+function downloadCSV(filename, headers, rows){
+  const lines = [headers.join(','), ...rows.map(r=>r.map(csvEscape).join(','))];
+  saveFileCompat(filename, lines.join('\r\n'), 'text/csv;charset=utf-8;');
+}
 function exportDashCSV(){
   const metrics = allSkuMetrics();
+  const dn = v => (v===null || Number.isNaN(v)) ? 'n/a' : (isFinite(v) ? Math.round(v) : '∞');
   downloadCSV(`quasi-dashboard-summary-${D.asOf}.csv`,
-    ['SKU','Name','Shopify Vel/Day','Amazon Vel/Day','Combined Vel/Day','On-Hand Combined','Days of Supply','Lead Time (days)','Reorder-By Date','Status','Suggested Order Qty','Inbound Qty','Inbound Next Arrival','Inbound Coverage','US On-Hand','Amazon On-Hand','US Days of Supply','Amazon Days of Supply'],
-    metrics.map(m=>[m.sku, skuName(m.sku), m.shopVel.toFixed(2), m.amzVel.toFixed(2), m.combinedVel.toFixed(2), Math.round(m.combinedOnHand), isFinite(m.daysOfSupply)?Math.round(m.daysOfSupply):'∞', Math.round(m.leadTime), m.reorderByDate, statusLabel(m.status), m.container, m.inboundQty, m.inboundNextArrival||'', m.inboundQty>0?m.inboundCoverage:'n/a', Math.round(m.usOnHandNow), m.onAmazon?Math.round(m.amzOnHandNow):'', isFinite(m.usDaysOfSupply)?Math.round(m.usDaysOfSupply):'∞', m.onAmazon?(isFinite(m.amzDaysOfSupply)?Math.round(m.amzDaysOfSupply):'∞'):''])
+    ['SKU','Name','Lifecycle','Status','Rate unit','Shopify Vel/Day','Amazon Vel/Day','Combined Vel/Day','Velocity Window','Out-of-stock Days Excluded','On-Hand Combined','Days of Supply (on-hand only)','Projected Stockout Date (with inbound)','Lead Time (days)','Reorder-By Date','Suggested Net Need (units)','Suggested Containers','Suggested Units','Projected Sell-Through Date (discontinued)','Inbound Qty (dated)','Inbound Next Arrival','Inbound Qty With No ETA','Inbound Coverage','US On-Hand','Amazon Quantity','US Days of Supply','Amazon Days of Supply'],
+    metrics.map(m=>[m.sku, skuName(m.sku), m.lifecycle, statusLabel(m.status), m.rate.unit, m.rateOk?m.shopVel.toFixed(2):'n/a', m.rateOk?m.amzVel.toFixed(2):'n/a', m.rateOk?m.combinedVel.toFixed(2):'n/a', m.rate.windowStart?`${m.rate.windowStart} to ${m.rate.windowEnd}`:'', m.rate.excludedDays||0, Math.round(m.combinedOnHand), dn(m.daysOfSupply), m.status==='disc'||m.status==='insuf'?'':(m.stockoutDate||''), Math.round(m.leadTime), (m.status==='disc'||m.status==='insuf'||m.status==='nodata')?'':m.reorderByDate, m.suggestedNet, m.suggestedContainers, m.suggestedUnits, m.sellThroughDate||'', m.inboundQty, m.inboundNextArrival||'', m.noEtaQty, m.inboundQty>0?m.inboundCoverage:'n/a', Math.round(m.usOnHandNow), m.onAmazon?Math.round(m.amzOnHandNow):'', dn(m.usDaysOfSupply), m.onAmazon?dn(m.amzDaysOfSupply):''])
   );
 }
 function exportShopCSV(){
@@ -3729,20 +4250,19 @@ function exportShopCSV(){
       const orders=(D.shopify.skuOrders[m.sku]||new Set()).size;
       const units=D.shopify.skuUnits[m.sku]||0;
       const inv=D.shopify.inv[m.sku]||{onHand:0,committed:0,unreserved:0};
-      const dos = m.shopVel>0 ? inv.unreserved/m.shopVel : (inv.unreserved>0?'∞':0);
+      const dos = !m.rateOk ? 'n/a' : m.shopVel>0 ? inv.unreserved/m.shopVel : (inv.unreserved>0?'∞':0);
       return [m.sku, skuName(m.sku), units, orders, m.shopVel.toFixed(2), inv.unreserved, inv.committed, typeof dos==='number'?Math.round(dos):dos, statusLabel(m.status)];
     })
   );
 }
 function exportAmzCSV(){
   const rows=[];
-  Object.entries(SETTINGS.amazonMapping).forEach(([amzSku,masterSku])=>{
-    const f=D.amazon.fba[amzSku];
-    if (!f) return;
-    rows.push([amzSku, masterSku?skuName(masterSku):'unmapped', f.available, f.inbound, f.t7, f.t30, (f.t30/30).toFixed(2), f.daysOfSupply, f.weeksCoverT30, f.recAction]);
+  Object.entries(D.amazon.fba).forEach(([amzSku,f])=>{
+    const masterSku = amazonMasterFor(amzSku, f);
+    rows.push([amzSku, f.asin||'', masterSku?skuName(masterSku):'unmapped', f.available, f.fcTransfer||0, f.reserved||0, f.inbound, f.unfulfillable||0, f.t7, f.t30, (f.t30/30).toFixed(2), f.daysOfSupply, f.weeksCoverT30, f.recAction, f.healthStatus||'', f.recShipInDate||'', f.recShipInQty||'', f.lowFee||'']);
   });
   downloadCSV(`quasi-amazon-detail-${D.asOf}.csv`,
-    ['Amazon SKU','Master SKU','Available','Inbound','Units Shipped T7','Units Shipped T30','Vel/Day','Days of Supply','Weeks of Cover T30','Recommended Action'],
+    ['Amazon SKU','ASIN','Master SKU','Available','FC Transfer','Reserved','Inbound To FBA','Unfulfillable','Units Shipped T7','Units Shipped T30','Vel/Day','Days of Supply','Weeks of Cover T30','Recommended Action','Inventory Health','Recommended Ship-in Date','Recommended Ship-in Qty','Low-Inventory-Level Fee This Week'],
     rows
   );
 }
@@ -3808,6 +4328,7 @@ renderInbounds();
 renderForecasting();
 initShell();
 autoReconnectGSheet();
+initLiveTeamStore();
 </script>
 </body>
 </html>
